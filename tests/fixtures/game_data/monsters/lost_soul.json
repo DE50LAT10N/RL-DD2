@@ -1,0 +1,14 @@
+{
+  "id": "lost_soul",
+  "name": "Lost Soul",
+  "skills": [
+    {
+      "id": "wail",
+      "source_ranks": [1, 2, 3, 4],
+      "target_ranks": [1, 2, 3, 4],
+      "damage_lo": 2,
+      "damage_hi": 4,
+      "stress_damage": 1
+    }
+  ]
+}

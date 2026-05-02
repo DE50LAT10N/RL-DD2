@@ -1,0 +1,5 @@
+{
+  "id": "road_fight",
+  "heroes": ["man_at_arms"],
+  "enemies": ["ghoul"]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "swine_brute",
+  "name": "Swine Brute",
+  "skills": [
+    {
+      "id": "maul",
+      "source_ranks": [1, 2],
+      "target_ranks": [1, 2],
+      "damage_lo": 6,
+      "damage_hi": 10,
+      "stress_damage": 1
+    }
+  ]
+}

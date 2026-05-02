@@ -1,0 +1,10 @@
+{
+  "id": "holy_water",
+  "name": "Holy Water",
+  "cooldown": 1,
+  "heal": 0,
+  "stress_heal": 1,
+  "gives_target": {
+    "BLOCK": 1
+  }
+}

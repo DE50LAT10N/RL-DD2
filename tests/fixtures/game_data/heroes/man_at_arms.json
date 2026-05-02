@@ -1,0 +1,94 @@
+{
+  "id": "man_at_arms",
+  "name": "Man-at-Arms",
+  "skills": [
+    {
+      "id": "wicked_slice",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 4,
+      "damage_hi": 8,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "rampart",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 3,
+      "damage_hi": 6,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "bolster",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 3,
+      "damage_hi": 6,
+      "crit_chance": 0.1,
+      "is_friendly": true,
+      "heal": 0,
+      "heal_stress": 1
+    },
+    {
+      "id": "retribution",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 3,
+      "damage_hi": 6,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    }
+  ]
+}

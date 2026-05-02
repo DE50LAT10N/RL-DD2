@@ -1,0 +1,8 @@
+{
+  "id": "healing_salve",
+  "name": "Healing Salve",
+  "cooldown": 1,
+  "heal": 5,
+  "stress_heal": 0,
+  "gives_target": {}
+}

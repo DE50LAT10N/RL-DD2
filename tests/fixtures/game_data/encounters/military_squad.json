@@ -1,0 +1,5 @@
+{
+  "id": "military_squad",
+  "heroes": ["man_at_arms", "highwayman", "plague_doctor", "grave_robber"],
+  "enemies": ["knight", "foot_soldier", "foot_soldier"]
+}

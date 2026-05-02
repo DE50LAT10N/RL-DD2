@@ -1,0 +1,47 @@
+{
+  "monsters": {
+    "ghoul_elite": {
+      "id": "ghoul_elite",
+      "name": "Ghoul Elite",
+      "skills": [
+        { "id": "elite_claw", "damage_lo": 7, "damage_hi": 11, "crit_chance": 0.12, "stress_damage": 1 },
+        { "id": "maul", "damage_lo": 6, "damage_hi": 10, "crit_chance": 0.08, "stress_damage": 2 }
+      ]
+    },
+    "cultist_elite": {
+      "id": "cultist_elite",
+      "name": "Cultist Elite",
+      "skills": [
+        { "id": "ritual_stab", "damage_lo": 6, "damage_hi": 9, "crit_chance": 0.1, "stress_damage": 2 },
+        { "id": "hex", "damage_lo": 4, "damage_hi": 7, "crit_chance": 0.05, "stress_damage": 3, "gives_target": { "VULNERABLE": 1 } }
+      ]
+    }
+  },
+  "encounters": {
+    "holdout_double_ghoul": {
+      "id": "holdout_double_ghoul",
+      "heroes": ["man_at_arms", "hellion", "highwayman", "plague_doctor"],
+      "enemies": ["ghoul", "ghoul"]
+    },
+    "holdout_double_cultist": {
+      "id": "holdout_double_cultist",
+      "heroes": ["man_at_arms", "hellion", "highwayman", "plague_doctor"],
+      "enemies": ["cultist", "cultist"]
+    },
+    "holdout_mix_wave": {
+      "id": "holdout_mix_wave",
+      "heroes": ["man_at_arms", "hellion", "highwayman", "plague_doctor"],
+      "enemies": ["ghoul", "cultist"]
+    },
+    "holdout_elite_pair": {
+      "id": "holdout_elite_pair",
+      "heroes": ["man_at_arms", "hellion", "highwayman", "plague_doctor"],
+      "enemies": ["ghoul_elite", "cultist_elite"]
+    },
+    "holdout_elite_swarm": {
+      "id": "holdout_elite_swarm",
+      "heroes": ["man_at_arms", "hellion", "highwayman", "plague_doctor"],
+      "enemies": ["ghoul_elite", "cultist_elite", "ghoul_elite", "cultist_elite"]
+    }
+  }
+}

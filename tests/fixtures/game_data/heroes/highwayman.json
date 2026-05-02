@@ -1,0 +1,94 @@
+{
+  "id": "highwayman",
+  "name": "Highwayman",
+  "skills": [
+    {
+      "id": "wicked_slice",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 4,
+      "damage_hi": 8,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "pistol_shot",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 3,
+      "damage_hi": 6,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "open_vein",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 3,
+      "damage_hi": 5,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "double_tap",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 4,
+      "damage_hi": 8,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    }
+  ]
+}

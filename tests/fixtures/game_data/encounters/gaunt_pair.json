@@ -1,0 +1,5 @@
+{
+  "id": "gaunt_pair",
+  "heroes": ["man_at_arms", "highwayman", "plague_doctor", "grave_robber"],
+  "enemies": ["ghoul", "lost_soul"]
+}

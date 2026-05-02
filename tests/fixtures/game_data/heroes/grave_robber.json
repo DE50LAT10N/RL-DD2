@@ -1,0 +1,94 @@
+{
+  "id": "grave_robber",
+  "name": "Grave Robber",
+  "skills": [
+    {
+      "id": "pick_to_the_face",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 4,
+      "damage_hi": 7,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "thrown_dagger",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 3,
+      "damage_hi": 5,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "poison_dart",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 2,
+      "damage_hi": 4,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "absinthe",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 3,
+      "damage_hi": 5,
+      "crit_chance": 0.1,
+      "is_friendly": true,
+      "heal": 5,
+      "heal_stress": 0
+    }
+  ]
+}

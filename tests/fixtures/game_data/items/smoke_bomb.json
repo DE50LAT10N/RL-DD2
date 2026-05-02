@@ -1,0 +1,10 @@
+{
+  "id": "smoke_bomb",
+  "name": "Smoke Bomb",
+  "cooldown": 1,
+  "heal": 0,
+  "stress_heal": 0,
+  "gives_target": {
+    "BLIND": 2
+  }
+}

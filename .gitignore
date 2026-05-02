@@ -1,0 +1,40 @@
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local virtualenvs and tool homes
+.venv/
+venv/
+.pydeps/
+.dotnet/
+.dotnet_home/
+.nuget/
+
+# Training outputs and model artifacts
+runs/
+runs_*/
+models/
+*.zip
+*.pkl
+*.npz
+events.out.tfevents.*
+
+# .NET build outputs
+bin/
+obj/
+mod/DdRL.Plugin/bin/
+mod/DdRL.Plugin/obj/
+
+# Generated DD2 reflection dumps
+mod/classes.discovered.json
+mod/members*.json
+
+# Local editor/system files
+.vscode/
+.idea/
+*.user
+*.suo
+Thumbs.db

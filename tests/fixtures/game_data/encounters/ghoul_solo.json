@@ -1,0 +1,5 @@
+{
+  "id": "ghoul_solo",
+  "heroes": ["man_at_arms", "highwayman", "plague_doctor", "grave_robber"],
+  "enemies": ["ghoul"]
+}

@@ -1,0 +1,26 @@
+{
+  "_comment": "Fill in exact values after first local verification run.",
+  "target_game": "Darkest Dungeon II",
+  "store": "steam",
+  "appid": 1940340,
+  "runtime": "Unity Mono x64",
+  "unity_version": "UNKNOWN_FILL_ME_IN",
+  "tested_build": "UNKNOWN_FILL_ME_IN",
+  "game_assembly": {
+    "relative_path": "Darkest Dungeon II_Data/Managed/Assembly-CSharp.dll",
+    "expected_sha256": "UNKNOWN_FILL_ME_IN",
+    "file_size_bytes": null
+  },
+  "bepinex": {
+    "branch": "5",
+    "min_version": "5.4.23.2",
+    "interop_generated": false
+  },
+  "class_paths": {
+    "_comment": "Resolved from ClassDiscovery logs, then copied into Hooks/ClassPaths.cs",
+    "battle_controller": null,
+    "turn_start_method": null,
+    "execute_skill_method": null,
+    "battle_end_method": null
+  }
+}

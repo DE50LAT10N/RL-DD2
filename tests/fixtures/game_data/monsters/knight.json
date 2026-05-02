@@ -1,0 +1,16 @@
+{
+  "id": "knight",
+  "name": "Knight",
+  "skills": [
+    {
+      "id": "crush",
+      "source_ranks": [1, 2],
+      "target_ranks": [1, 2],
+      "damage_lo": 5,
+      "damage_hi": 8,
+      "gives_self": {
+        "BLOCK": 1
+      }
+    }
+  ]
+}

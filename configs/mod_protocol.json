@@ -1,0 +1,16 @@
+{
+  "protocol_version": 1,
+  "messages": {
+    "hello": {"required": ["type", "protocol_version", "mod_version", "in_battle"]},
+    "state": {"required": ["type", "state"]},
+    "action": {
+      "required": ["type", "request_id", "hero_slot", "method"],
+      "optional": ["skill_idx", "target_idx", "item_id", "pass_turn"]
+    },
+    "ack": {"required": ["type", "request_id", "ok"], "optional": ["method", "reason"]},
+    "battle_end": {"required": ["type", "heroes_won"]},
+    "ping": {"required": ["type", "request_id"]},
+    "pong": {"required": ["type", "request_id"]},
+    "error": {"required": ["type", "code", "message"]}
+  }
+}

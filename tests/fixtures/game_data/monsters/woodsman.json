@@ -1,0 +1,14 @@
+{
+  "id": "woodsman",
+  "name": "Woodsman",
+  "skills": [
+    {
+      "id": "split",
+      "source_ranks": [1, 2],
+      "target_ranks": [1, 2],
+      "damage_lo": 6,
+      "damage_hi": 9,
+      "crit_chance": 0.1
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "id": "plague_doctor",
+  "name": "Plague Doctor",
+  "skills": [
+    {
+      "id": "noxious_blast",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 2,
+      "damage_hi": 3,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "plague_grenade",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 1,
+      "damage_hi": 2,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    },
+    {
+      "id": "battlefield_medicine",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 1,
+      "damage_hi": 2,
+      "crit_chance": 0.1,
+      "is_friendly": true,
+      "heal": 5,
+      "heal_stress": 0
+    },
+    {
+      "id": "blinding_gas",
+      "source_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "target_ranks": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "cooldown": 0,
+      "damage_lo": 3,
+      "damage_hi": 6,
+      "crit_chance": 0.1,
+      "is_friendly": false,
+      "heal": 0,
+      "heal_stress": 0
+    }
+  ]
+}

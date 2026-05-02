@@ -1,0 +1,8 @@
+{
+  "id": "bandages",
+  "name": "Bandages",
+  "cooldown": 1,
+  "heal": 4,
+  "stress_heal": 0,
+  "gives_target": {}
+}

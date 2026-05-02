@@ -1,0 +1,19 @@
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.pdb
+*.dll
+*.exe
+*.log
+
+# Keep generated reports out of git
+classes.discovered.json
+
+# Never commit game binaries or assets
+Darkest Dungeon II.exe
+GameAssembly.dll
+globalgamemanagers
+*_Data/

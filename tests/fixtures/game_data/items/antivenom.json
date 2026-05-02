@@ -1,0 +1,8 @@
+{
+  "id": "antivenom",
+  "name": "Antivenom",
+  "cooldown": 1,
+  "heal": 2,
+  "stress_heal": 0,
+  "gives_target": {}
+}

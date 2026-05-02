@@ -1,0 +1,5 @@
+{
+  "id": "cultist_trio",
+  "heroes": ["man_at_arms", "highwayman", "plague_doctor", "grave_robber"],
+  "enemies": ["evangelist", "cherub", "foot_soldier"]
+}

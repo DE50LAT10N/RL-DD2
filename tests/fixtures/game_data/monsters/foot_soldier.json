@@ -1,0 +1,13 @@
+{
+  "id": "foot_soldier",
+  "name": "Foot Soldier",
+  "skills": [
+    {
+      "id": "spear_thrust",
+      "source_ranks": [1, 2, 3],
+      "target_ranks": [1, 2, 3],
+      "damage_lo": 3,
+      "damage_hi": 6
+    }
+  ]
+}

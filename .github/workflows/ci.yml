@@ -1,0 +1,20 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Validate extracted game data
+        run: python scripts/validate_game_data.py --data-root ./tests/fixtures/game_data
+      - name: Run deterministic engine smoke test
+        run: python scripts/test_engine_deterministic.py

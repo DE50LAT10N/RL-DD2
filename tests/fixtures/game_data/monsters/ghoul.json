@@ -1,0 +1,13 @@
+{
+  "id": "ghoul",
+  "name": "Ghoul",
+  "skills": [
+    {
+      "id": "claw",
+      "source_ranks": [1, 2, 3, 4],
+      "target_ranks": [1, 2, 3, 4],
+      "damage_lo": 3,
+      "damage_hi": 6
+    }
+  ]
+}

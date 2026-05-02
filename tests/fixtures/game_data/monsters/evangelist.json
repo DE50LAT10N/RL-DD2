@@ -1,0 +1,26 @@
+{
+  "id": "evangelist",
+  "name": "Evangelist",
+  "skills": [
+    {
+      "id": "blood_commune",
+      "source_ranks": [1, 2],
+      "target_ranks": [1, 2],
+      "damage_lo": 4,
+      "damage_hi": 7,
+      "stress_damage": 1,
+      "gives_target": {
+        "BLEED": 1
+      }
+    },
+    {
+      "id": "nocturne_commune",
+      "source_ranks": [1, 2],
+      "target_ranks": [1, 2, 3, 4],
+      "is_friendly": true,
+      "gives_self": {
+        "DODGE": 1
+      }
+    }
+  ]
+}
