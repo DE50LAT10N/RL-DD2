@@ -14,13 +14,16 @@ venv/
 .nuget/
 
 # Training outputs and model artifacts
-runs/
+runs/*
+!runs/best/
+runs/best/*
 runs_*/
 models/
 *.zip
 *.pkl
 *.npz
 events.out.tfevents.*
+!runs/best/best_model.zip
 
 # .NET build outputs
 bin/
