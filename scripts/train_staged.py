@@ -11,7 +11,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="Run staged MaskablePPO training milestones.")
-    p.add_argument("--milestones", type=str, default="1000000,3000000,5000000")
+    p.add_argument("--milestones", type=str, default="1000000,3000000,5000000,100000000")
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--n-envs", type=int, default=8)
     p.add_argument("--device", choices=("auto", "cuda", "cpu"), default="auto")
@@ -26,7 +26,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--gamma", type=float, default=0.995)
     p.add_argument("--max-episode-steps", type=int, default=120)
     p.add_argument("--checkpoint-global-freq", type=int, default=50_000)
+    p.add_argument("--checkpoint-save-path", type=str, default="runs/checkpoints/")
+    p.add_argument("--milestone-checkpoints", type=str, default="100000000")
     p.add_argument("--eval-global-freq", type=int, default=25_000)
+    p.add_argument("--best-model-save-path", type=str, default="runs/best/")
+    p.add_argument("--eval-log-path", type=str, default="runs/eval/")
     p.add_argument("--out-prefix", type=str, default="runs/dd2_ppo_stage")
     return p.parse_args()
 
@@ -77,8 +81,16 @@ def main() -> int:
             str(args.max_episode_steps),
             "--checkpoint-global-freq",
             str(args.checkpoint_global_freq),
+            "--checkpoint-save-path",
+            args.checkpoint_save_path,
             "--eval-global-freq",
             str(args.eval_global_freq),
+            "--milestone-checkpoints",
+            args.milestone_checkpoints,
+            "--best-model-save-path",
+            args.best_model_save_path,
+            "--eval-log-path",
+            args.eval_log_path,
             "--out",
             str(out_model),
             "--run-meta-out",

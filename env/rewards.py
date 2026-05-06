@@ -21,8 +21,11 @@ class RewardWeights:
     enemy_kill_bonus: float = 4.0
     hero_death_penalty: float = -6.0
     stall_penalty: float = -0.25
-    pass_penalty: float = -0.12
+    pass_penalty: float = -0.9
+    move_penalty: float = -0.08
     diversity_bonus: float = 0.04
+    no_effect_skill_penalty: float = -1.25
+    repeat_same_action_penalty: float = -0.5
     phi_alpha: float = 0.5
     phi_beta: float = 0.3
     phi_gamma: float = 0.5
@@ -31,6 +34,10 @@ class RewardWeights:
     heal_bonus: float = 0.16
     heal_critical_bonus: float = 0.08
     heal_bonus_cap: float = 1.25
+    heal_low_hp_threshold: float = 0.5
+    heal_low_hp_target_bonus: float = 1.0
+    plague_doctor_low_hp_heal_bonus: float = 1.2
+    heal_healthy_target_penalty: float = -0.25
     defense_setup_bonus: float = 0.18
     defense_critical_bonus: float = 0.22
     defense_bonus_cap: float = 1.0
@@ -48,20 +55,25 @@ class RewardCalculator:
     def __init__(self, weights: RewardWeights | None = None) -> None:
         self.w = weights or load_reward_weights()
         self._last_skill_name: str | None = None
+        self._last_action_key: tuple[str, str, tuple[str, ...]] | None = None
+
+    def reset(self) -> None:
+        self._last_skill_name = None
+        self._last_action_key = None
 
     def _phi(self, state: Any) -> float:
         hero_hp_now = sum(max(0, u.hp) for u in state.heroes)
         hero_hp_cap = sum(max(1, u.max_hp) for u in state.heroes)
-        enemy_hp_now = sum(max(0, u.hp) for u in state.enemies)
-        enemy_hp_cap = sum(max(1, u.max_hp) for u in state.enemies)
+        enemy_hp_now = self._hp_sum(state.enemies)
+        enemy_hp_cap = self._hp_cap(state.enemies)
         alive_heroes = sum(1 for u in state.heroes if u.alive)
-        alive_enemies = sum(1 for u in state.enemies if u.alive)
+        alive_enemies = self._alive_count(state.enemies)
         stress = sum(max(0, u.stress) for u in state.heroes)
         stress_cap = max(1, len(state.heroes) * 10)
         hp_heroes_pct = hero_hp_now / max(1, hero_hp_cap)
         hp_enemies_pct = enemy_hp_now / max(1, enemy_hp_cap)
         alive_heroes_pct = alive_heroes / max(1, len(state.heroes))
-        alive_enemies_pct = alive_enemies / max(1, len(state.enemies))
+        alive_enemies_pct = alive_enemies / max(1, len(self._combat_units(state.enemies)))
         stress_pct = stress / stress_cap
         return (
             self.w.phi_alpha * hp_heroes_pct
@@ -75,25 +87,42 @@ class RewardCalculator:
     def _token_count(unit: Any, token: TokenId) -> int:
         return sum(t.count for t in getattr(unit, "tokens", []) if t.id == token)
 
+    @staticmethod
+    def _combat_units(units: list[Any]) -> list[Any]:
+        return [u for u in units if not bool(getattr(u, "is_remnant", False))]
+
+    @classmethod
+    def _hp_sum(cls, units: list[Any]) -> int:
+        return sum(max(0, int(getattr(u, "hp", 0))) for u in cls._combat_units(units))
+
+    @classmethod
+    def _hp_cap(cls, units: list[Any]) -> int:
+        return sum(max(1, int(getattr(u, "max_hp", 1))) for u in cls._combat_units(units))
+
+    @classmethod
+    def _alive_count(cls, units: list[Any]) -> int:
+        return sum(1 for u in cls._combat_units(units) if bool(getattr(u, "alive", False)))
+
     def compute(self, before: Any, after: Any, trace: Any) -> float:
         done_reward = 0.0
         if after.done:
             done_reward = self.w.win if after.heroes_won else self.w.defeat
         hero_hp_before = sum(max(0, u.hp) for u in before.heroes)
         hero_hp_after = sum(max(0, u.hp) for u in after.heroes)
-        enemy_hp_before = sum(max(0, u.hp) for u in before.enemies)
-        enemy_hp_after = sum(max(0, u.hp) for u in after.enemies)
+        enemy_hp_before = self._hp_sum(before.enemies)
+        enemy_hp_after = self._hp_sum(after.enemies)
         stress_before = sum(max(0, u.stress) for u in before.heroes)
         stress_after = sum(max(0, u.stress) for u in after.heroes)
-        enemy_alive_before = sum(1 for u in before.enemies if u.alive)
-        enemy_alive_after = sum(1 for u in after.enemies if u.alive)
+        enemy_alive_before = self._alive_count(before.enemies)
+        enemy_alive_after = self._alive_count(after.enemies)
         hero_alive_before = sum(1 for u in before.heroes if u.alive)
         alive_after = sum(1 for u in after.heroes if u.alive)
         afflicted_after = sum(1 for u in after.heroes if u.afflicted)
         enemy_kills = max(0, enemy_alive_before - enemy_alive_after)
         hero_losses = max(0, hero_alive_before - alive_after)
-        low_hp_before = sum(1 for u in before.heroes if u.alive and (u.hp / max(1, u.max_hp)) <= 0.45)
-        low_hp_after = sum(1 for u in after.heroes if u.alive and (u.hp / max(1, u.max_hp)) <= 0.45)
+        low_hp_threshold = float(self.w.heal_low_hp_threshold)
+        low_hp_before = sum(1 for u in before.heroes if u.alive and (u.hp / max(1, u.max_hp)) <= low_hp_threshold)
+        low_hp_after = sum(1 for u in after.heroes if u.alive and (u.hp / max(1, u.max_hp)) <= low_hp_threshold)
 
         # Penalize turns that do not advance combat state.
         did_progress = (enemy_hp_before - enemy_hp_after) > 0 or enemy_kills > 0
@@ -118,6 +147,19 @@ class RewardCalculator:
             # Reward healing more when it removes critical HP states.
             critical_relief = max(0, low_hp_before - low_hp_after)
             heal_bonus += critical_relief * self.w.heal_critical_bonus
+            target_names = set(getattr(trace, "target_names", []) or [])
+            healed_targets_before = [u for u in before.heroes if u.id in target_names and u.alive]
+            healed_low_hp_targets = [
+                u for u in healed_targets_before
+                if (u.hp / max(1, u.max_hp)) <= low_hp_threshold
+            ]
+            if healed_low_hp_targets:
+                missing_ratio = max(1.0 - (u.hp / max(1, u.max_hp)) for u in healed_low_hp_targets)
+                heal_bonus += self.w.heal_low_hp_target_bonus * missing_ratio
+                if getattr(trace, "skill_name", "") == "battlefield_medicine":
+                    heal_bonus += self.w.plague_doctor_low_hp_heal_bonus * missing_ratio
+            elif healed_targets_before:
+                heal_bonus += self.w.heal_healthy_target_penalty
             if not did_progress and not after.done:
                 heal_bonus *= 0.6
             reward += min(self.w.heal_bonus_cap, heal_bonus)
@@ -143,8 +185,29 @@ class RewardCalculator:
         skill_name = getattr(trace, "skill_name", None)
         if skill_name == "pass":
             reward += self.w.pass_penalty
+        elif skill_name == "move":
+            reward += self.w.move_penalty
+        elif skill_name and skill_name not in {"item", "stunned", "pass_no_targets"}:
+            useful_effect = (
+                int(getattr(trace, "damage_to_enemies", 0) or 0) > 0
+                or int(getattr(trace, "damage_to_heroes", 0) or 0) > 0
+                or int(getattr(trace, "healing_done", 0) or 0) > 0
+                or int(getattr(trace, "stress_delta", 0) or 0) != 0
+                or int(getattr(trace, "relationships_delta", 0) or 0) != 0
+            )
+            if not useful_effect:
+                reward += self.w.no_effect_skill_penalty
         if skill_name and self._last_skill_name and skill_name != self._last_skill_name:
             reward += self.w.diversity_bonus
+        if skill_name:
+            action_key = (
+                str(getattr(trace, "actor_name", "")),
+                str(skill_name),
+                tuple(str(x) for x in (getattr(trace, "target_names", []) or [])),
+            )
+            if action_key == self._last_action_key and skill_name not in {"pass", "move", "item", "stunned"}:
+                reward += self.w.repeat_same_action_penalty
+            self._last_action_key = action_key
         if skill_name:
             self._last_skill_name = skill_name
         return reward

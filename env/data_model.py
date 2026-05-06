@@ -47,6 +47,7 @@ class Unit:
     tokens: list[Token] = field(default_factory=list)
     alive: bool = True
     afflicted: bool = False
+    is_remnant: bool = False
 
 
 @dataclass(slots=True)
@@ -72,12 +73,13 @@ class Skill:
 
 @dataclass(slots=True)
 class ActionSpec:
-    kind: Literal["skill", "item", "pass"]
+    kind: Literal["skill", "item", "move", "pass"]
     actor_idx: int = 0
     skill_idx: int | None = None
     item_id: str | None = None
     target_idx: int | None = None
     target_side: Literal["heroes", "enemies"] | None = None
+    move_delta: int = 0
 
 
 @dataclass(slots=True)

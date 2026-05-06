@@ -12,7 +12,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from sb3_contrib import MaskablePPO
 from sb3_contrib.common.maskable.callbacks import MaskableEvalCallback
-from stable_baselines3.common.callbacks import CheckpointCallback, CallbackList
+from stable_baselines3.common.callbacks import BaseCallback, CheckpointCallback, CallbackList
+from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 import torch
 
@@ -116,6 +117,27 @@ class HoldoutEvalEnv(DarkestDungeonEnv):
         return super().reset(seed=seed, options=opts)
 
 
+class MilestoneCheckpointCallback(BaseCallback):
+    def __init__(self, milestones: list[int], save_path: str = "runs/checkpoints", verbose: int = 0) -> None:
+        super().__init__(verbose=verbose)
+        self.milestones = sorted({int(x) for x in milestones if int(x) > 0})
+        self.save_path = Path(save_path)
+        self._saved: set[int] = set()
+
+    def _on_step(self) -> bool:
+        for milestone in self.milestones:
+            if milestone in self._saved:
+                continue
+            if self.num_timesteps >= milestone:
+                self.save_path.mkdir(parents=True, exist_ok=True)
+                out = self.save_path / f"milestone_{milestone}_steps.zip"
+                self.model.save(out)
+                self._saved.add(milestone)
+                if self.verbose:
+                    print(f"saved_milestone_checkpoint={out}")
+        return True
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train DD2 PPO in simulator")
     parser.add_argument("--steps", type=int, default=1_000_000)
@@ -140,6 +162,9 @@ def parse_args() -> argparse.Namespace:
         help="If <1, linearly decay learning rate to this fraction of --learning-rate by end of training.",
     )
     parser.add_argument("--run-meta-out", type=str, default="", help="Optional JSON path for run configuration metadata.")
+    parser.add_argument("--best-model-save-path", type=str, default="runs/best/", help="Directory for eval best_model.zip.")
+    parser.add_argument("--eval-log-path", type=str, default="runs/eval/", help="Directory for eval metrics.")
+    parser.add_argument("--checkpoint-save-path", type=str, default="runs/checkpoints/", help="Directory for periodic and milestone checkpoints.")
     parser.add_argument(
         "--eval-global-freq",
         type=int,
@@ -151,6 +176,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=50_000,
         help="Save checkpoint every N global timesteps.",
+    )
+    parser.add_argument(
+        "--milestone-checkpoints",
+        type=str,
+        default="100000000",
+        help="Comma-separated global timesteps to save exact milestone checkpoints.",
     )
     return parser.parse_args()
 
@@ -177,15 +208,21 @@ def main() -> int:
     per_env_total_steps = max(1, args.steps // max(1, args.n_envs))
     env_fns = [_make_env(args.seed + i, args.max_episode_steps, per_env_total_steps) for i in range(args.n_envs)]
     env = vec_cls(env_fns)
-    eval_env = DummyVecEnv([lambda: HoldoutEvalEnv(seed=args.seed + 997, max_episode_steps=args.max_episode_steps)])
+    eval_env = DummyVecEnv([lambda: Monitor(HoldoutEvalEnv(seed=args.seed + 997, max_episode_steps=args.max_episode_steps))])
     checkpoint_freq = max(1, args.checkpoint_global_freq // max(1, args.n_envs))
     eval_freq = max(1, args.eval_global_freq // max(1, args.n_envs))
+    milestone_checkpoints = [
+        int(x.strip().replace("_", ""))
+        for x in str(args.milestone_checkpoints).split(",")
+        if x.strip()
+    ]
     callbacks = CallbackList([
-        CheckpointCallback(save_freq=checkpoint_freq, save_path="runs/checkpoints/"),
+        CheckpointCallback(save_freq=checkpoint_freq, save_path=args.checkpoint_save_path),
+        MilestoneCheckpointCallback(milestone_checkpoints, save_path=args.checkpoint_save_path, verbose=1),
         MaskableEvalCallback(
             eval_env,
-            best_model_save_path="runs/best/",
-            log_path="runs/eval/",
+            best_model_save_path=args.best_model_save_path,
+            log_path=args.eval_log_path,
             eval_freq=eval_freq,
             n_eval_episodes=20,
             deterministic=True,
@@ -202,7 +239,15 @@ def main() -> int:
     else:
         lr_arg = lr
     if args.resume:
-        model = MaskablePPO.load(args.resume, env=env, device=selected_device)
+        model = MaskablePPO.load(args.resume, device=selected_device)
+        if model.observation_space != env.observation_space or model.action_space != env.action_space:
+            raise ValueError(
+                "Resume model is incompatible with the updated simulator spaces. "
+                f"model_obs={model.observation_space} env_obs={env.observation_space}; "
+                f"model_action={model.action_space} env_action={env.action_space}. "
+                "Start a fresh training run for pass/move/remnant support."
+            )
+        model.set_env(env)
     else:
         model = MaskablePPO(
             "MlpPolicy",
@@ -240,8 +285,12 @@ def main() -> int:
             "net_arch": net_arch,
             "resume": args.resume,
             "out": args.out,
+            "best_model_save_path": args.best_model_save_path,
+            "eval_log_path": args.eval_log_path,
+            "checkpoint_save_path": args.checkpoint_save_path,
             "eval_global_freq": args.eval_global_freq,
             "checkpoint_global_freq": args.checkpoint_global_freq,
+            "milestone_checkpoints": milestone_checkpoints,
             "curriculum_total_steps_per_env": per_env_total_steps,
         }
         meta_path = Path(args.run_meta_out)

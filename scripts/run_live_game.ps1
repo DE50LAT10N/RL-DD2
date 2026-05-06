@@ -9,11 +9,14 @@ param(
   [double]$ResetTimeout = 120.0,
   [double]$ActionTimeout = 10.0,
   [double]$EnemyTurnWait = 60.0,
+  [double]$StunnedTurnWait = 12.0,
   [double]$StepDelay = 0.25,
   [int]$ServerCheckRetries = 5,
   [string]$ExpectedModVersion = "0.1.21-stability",
   [switch]$DisablePassActions,
   [switch]$AllowPassActions,
+  [switch]$DisableEmergencyPass,
+  [switch]$AllowPolicyMoveActions,
   [string]$Python = "",
   [string[]]$GameProcessNames = @("Darkest Dungeon II", "DarkestDungeonII", "DarkestDungeon2", "Darkest Dungeon 2"),
   [switch]$Stochastic,
@@ -237,6 +240,7 @@ $argsList = @(
   "--reset-timeout", "$ResetTimeout",
   "--action-timeout", "$ActionTimeout",
   "--enemy-turn-wait", "$EnemyTurnWait",
+  "--stunned-turn-wait", "$StunnedTurnWait",
   "--step-delay", "$StepDelay",
   "--mode", $Mode
 )
@@ -252,6 +256,12 @@ if ($Quiet) {
 }
 if ($AllowPassActions -and -not $DisablePassActions) {
   $argsList += "--allow-pass-actions"
+}
+if ($DisableEmergencyPass) {
+  $argsList += "--disable-emergency-pass"
+}
+if ($AllowPolicyMoveActions) {
+  $argsList += "--allow-policy-move-actions"
 }
 
 Write-Host "Starting live agent: $pythonExe $($argsList -join ' ')"

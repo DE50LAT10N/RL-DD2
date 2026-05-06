@@ -33,6 +33,7 @@ def _parse_unit(raw: dict, side: str) -> Unit:
         if tid in TokenId.__members__:
             tokens.append(Token(TokenId[tid], int(t.get("count", 1))))
     hp = int(raw.get("hp", 1))
+    is_remnant = side == "enemies" and _is_enemy_remnant(raw)
     return Unit(
         id=str(raw.get("id") or raw.get("name") or "unit"),
         archetype_id=str(raw.get("archetype_id") or raw.get("name") or "unit"),
@@ -44,4 +45,26 @@ def _parse_unit(raw: dict, side: str) -> Unit:
         tokens=tokens,
         alive=bool(raw.get("alive", hp > 0)),
         afflicted=bool(raw.get("afflicted", False)),
+        is_remnant=is_remnant,
+    )
+
+
+def _is_enemy_remnant(unit: dict) -> bool:
+    text = " ".join(
+        str(unit.get(key, ""))
+        for key in ("id", "name", "archetype_id", "display_name")
+    ).lower()
+    return any(
+        marker in text
+        for marker in (
+            "corpse",
+            "cadaver",
+            "remnant",
+            "tomb",
+            "grave",
+            "gravestone",
+            "headstone",
+            "С‚СЂСѓРї",
+            "РЅР°РґРіСЂРѕР±",
+        )
     )

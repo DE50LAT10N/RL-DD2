@@ -53,7 +53,7 @@ class SimBattleBackend:
         return speed
 
     def _rebuild_speed_order(self, state: BattleState) -> None:
-        alive = [u for u in state.heroes + state.enemies if u.alive]
+        alive = [u for u in state.heroes + state.enemies if u.alive and not u.is_remnant]
         scored = []
         for u in alive:
             jitter = self.rng.random() * 0.01
@@ -120,7 +120,7 @@ class SimBattleBackend:
         while state.speed_order:
             uid = state.speed_order[0]
             unit = self._get_unit_by_id(state, uid)
-            if unit is None or not unit.alive:
+            if unit is None or not unit.alive or unit.is_remnant:
                 state.speed_order.pop(0)
                 continue
             pool = state.heroes if unit.side == "heroes" else state.enemies
@@ -162,12 +162,31 @@ class SimBattleBackend:
             self._handle_deaths_door(unit)
 
     def _handle_deaths_door(self, unit: Unit) -> None:
+        if unit.is_remnant:
+            unit.alive = False
+            unit.hp = 0
+            return
         if self._token_count(unit, TokenId.DEATHS_DOOR) > 0:
+            if unit.side == "enemies":
+                self._make_remnant(unit)
+                return
             unit.alive = False
             unit.hp = 0
             return
         unit.hp = 1
         self._add_token(unit, TokenId.DEATHS_DOOR, 1)
+
+    def _make_remnant(self, unit: Unit) -> None:
+        remnant_hp = max(1, min(12, int(round(unit.max_hp * 0.3))))
+        unit.id = f"{unit.id}_tombstone"
+        unit.archetype_id = "enemy_tombstone"
+        unit.hp = remnant_hp
+        unit.max_hp = remnant_hp
+        unit.stress = 0
+        unit.tokens = []
+        unit.afflicted = False
+        unit.alive = True
+        unit.is_remnant = True
 
     def _roll_hit(self, actor: Unit, target: Unit) -> bool:
         blind_penalty = 0.35 if self._token_count(actor, TokenId.BLIND) else 0.0
@@ -218,10 +237,40 @@ class SimBattleBackend:
     def _rank_shift(self, side_units: list[Unit], unit: Unit, delta: int) -> None:
         if delta == 0 or not unit.alive or self._token_count(unit, TokenId.IMMOBILIZE):
             return
-        unit.rank = max(1, min(4, unit.rank + delta))
         alive = sorted([u for u in side_units if u.alive], key=lambda x: x.rank)
+        if unit not in alive:
+            return
+        current_idx = alive.index(unit)
+        target_idx = max(0, min(len(alive) - 1, current_idx + delta))
+        if target_idx == current_idx:
+            return
+        alive.pop(current_idx)
+        alive.insert(target_idx, unit)
         for i, u in enumerate(alive):
             u.rank = i + 1
+
+    @staticmethod
+    def _combat_alive(unit: Unit) -> bool:
+        return unit.alive and not unit.is_remnant
+
+    @staticmethod
+    def _combat_units(units: list[Unit]) -> list[Unit]:
+        return [u for u in units if u.alive and not u.is_remnant]
+
+    @staticmethod
+    def _remnant_units(units: list[Unit]) -> list[Unit]:
+        return [u for u in units if u.alive and u.is_remnant]
+
+    def _mark_terminal_if_done(self, state: BattleState) -> bool:
+        if not any(self._combat_alive(u) for u in state.enemies):
+            state.done = True
+            state.heroes_won = True
+            return True
+        if not any(self._combat_alive(u) for u in state.heroes):
+            state.done = True
+            state.heroes_won = False
+            return True
+        return False
 
     def _apply_relationship_event(self, state: BattleState, actor: Unit, event_delta: int) -> None:
         for ally in state.heroes:
@@ -290,15 +339,30 @@ class SimBattleBackend:
                 continue
             targets = state.heroes if sk.is_friendly else state.enemies
             target_side = "heroes" if sk.is_friendly else "enemies"
-            for ti, tgt in enumerate(targets):
-                if tgt.alive and tgt.rank in sk.target_ranks:
-                    actions.append(ActionSpec(kind="skill", actor_idx=actor_idx, skill_idx=si, target_idx=ti, target_side=target_side))
+            candidate_targets = [
+                (ti, tgt)
+                for ti, tgt in enumerate(targets)
+                if self._combat_alive(tgt) and tgt.rank in sk.target_ranks
+            ]
+            if not sk.is_friendly and not candidate_targets:
+                candidate_targets = [
+                    (ti, tgt)
+                    for ti, tgt in enumerate(targets)
+                    if tgt.alive and tgt.is_remnant and tgt.rank in sk.target_ranks
+                ]
+            for ti, tgt in candidate_targets:
+                actions.append(ActionSpec(kind="skill", actor_idx=actor_idx, skill_idx=si, target_idx=ti, target_side=target_side))
         for iid, amount in state.items_available.items():
             if amount <= 0 or self._item_cooldowns.get(iid, 0) > 0:
                 continue
             for ti, tgt in enumerate(state.heroes):
                 if tgt.alive:
                     actions.append(ActionSpec(kind="item", actor_idx=actor_idx, item_id=iid, target_idx=ti, target_side="heroes"))
+        if not self._token_count(actor, TokenId.IMMOBILIZE):
+            for delta in (-1, 1):
+                target_rank = actor.rank + delta
+                if 1 <= target_rank <= len([h for h in state.heroes if h.alive]):
+                    actions.append(ActionSpec(kind="move", actor_idx=actor_idx, move_delta=delta))
         actions.append(ActionSpec(kind="pass", actor_idx=actor_idx, target_idx=None))
         return actions
 
@@ -321,16 +385,21 @@ class SimBattleBackend:
 
     def _pick_enemy_action(self, state: BattleState, actor: Unit) -> ActionSpec:
         skills = [s for s in self._skills_for(actor) if actor.rank in s.source_ranks and state.skill_cooldowns.get((actor.id, s.id), 0) <= 0]
-        if not skills:
-            return ActionSpec(kind="pass")
-        heroes = [h for h in state.heroes if h.alive]
+        heroes = [h for h in state.heroes if self._combat_alive(h)]
+        if not skills or not heroes:
+            delta = self._choose_reposition_delta(state, actor)
+            return ActionSpec(kind="move", move_delta=delta) if delta else ActionSpec(kind="pass")
         taunt_targets = [h for h in heroes if self._token_count(h, TokenId.TAUNT) > 0]
         if taunt_targets:
             target = taunt_targets[0]
         else:
             target = min(heroes, key=lambda h: (h.hp / max(1, h.max_hp), -h.stress))
         target_idx = state.heroes.index(target)
-        best = max(skills, key=lambda s: (s.damage_hi, s.stress_damage))
+        targetable_skills = [s for s in skills if target.rank in s.target_ranks]
+        if not targetable_skills:
+            delta = self._choose_reposition_delta(state, actor)
+            return ActionSpec(kind="move", move_delta=delta) if delta else ActionSpec(kind="pass")
+        best = max(targetable_skills, key=lambda s: (s.damage_hi, s.stress_damage))
         skill_idx = self._skills_for(actor).index(best)
         return ActionSpec(kind="skill", skill_idx=skill_idx, target_idx=target_idx, target_side="heroes")
 
@@ -344,7 +413,7 @@ class SimBattleBackend:
             if state.skill_cooldowns.get((actor.id, sk.id), 0) > 0:
                 continue
             for tgt in state.enemies if actor.side == "heroes" else state.heroes:
-                if tgt.alive and tgt.rank in sk.target_ranks:
+                if self._combat_alive(tgt) and tgt.rank in sk.target_ranks:
                     return True
         return False
 
@@ -359,7 +428,7 @@ class SimBattleBackend:
                 continue
             if state.skill_cooldowns.get((actor.id, sk.id), 0) > 0:
                 continue
-            valid_targets = sum(1 for tgt in targets if tgt.alive and tgt.rank in sk.target_ranks)
+            valid_targets = sum(1 for tgt in targets if self._combat_alive(tgt) and tgt.rank in sk.target_ranks)
             if valid_targets <= 0:
                 continue
             # Favor positions with more reachable targets and stronger damage ceilings.
@@ -387,7 +456,9 @@ class SimBattleBackend:
             return state
         side, actor_idx, actor = self.get_active_unit(state)
         self._apply_start_turn_dot(actor)
-        if not actor.alive:
+        if self._mark_terminal_if_done(state):
+            return state
+        if not actor.alive or actor.is_remnant:
             if state.speed_order:
                 state.speed_order.pop(0)
             self._advance_turn(state)
@@ -405,19 +476,16 @@ class SimBattleBackend:
         if side == "heroes":
             legal = self.legal_action_specs(state)
             if chosen not in legal:
-                chosen = next((x for x in legal if x.kind == "skill"), ActionSpec(kind="pass", actor_idx=actor_idx))
+                chosen = next((x for x in legal if x.kind == "skill"), next((x for x in legal if x.kind == "move"), ActionSpec(kind="pass", actor_idx=actor_idx)))
         else:
             chosen = self._pick_enemy_action(state, actor)
 
         if chosen.kind == "pass":
             self.last_trace.skill_name = "pass"
-            # If the unit is out of range and cannot hit any target, reposition instead of idling.
-            if not self._has_attack_targets(state, actor):
-                team = state.heroes if actor.side == "heroes" else state.enemies
-                delta = self._choose_reposition_delta(state, actor)
-                if delta != 0:
-                    self._rank_shift(team, actor, delta)
-                    self.last_trace.skill_name = "reposition"
+        elif chosen.kind == "move":
+            self.last_trace.skill_name = "move"
+            team = state.heroes if actor.side == "heroes" else state.enemies
+            self._rank_shift(team, actor, int(chosen.move_delta))
         elif chosen.kind == "item" and chosen.item_id:
             target = state.heroes[min(chosen.target_idx or 0, len(state.heroes) - 1)]
             item = self.data.items[chosen.item_id]
@@ -430,57 +498,57 @@ class SimBattleBackend:
                 self.last_trace.skill_name = "pass_no_targets"
             else:
                 target = target_team[min(chosen.target_idx or 0, len(target_team) - 1)]
-                target = self._resolve_guarded(state, target)
-                self.last_trace.skill_name = sk.id
-                self.last_trace.target_names = [target.id]
-                if self._roll_hit(actor, target):
-                    if sk.damage_hi > 0:
-                        dmg = self._apply_damage(actor, target, sk)
-                        if target.side == "heroes":
-                            self.last_trace.damage_to_heroes += dmg
-                        else:
-                            self.last_trace.damage_to_enemies += dmg
-                    if sk.heal > 0:
-                        target.hp = min(target.max_hp, target.hp + sk.heal)
-                        self.last_trace.healing_done += sk.heal
-                    if sk.heal_stress > 0:
-                        target.stress = max(0, target.stress - sk.heal_stress)
-                    target.stress = min(10, target.stress + sk.stress_damage)
-                    for t in sk.gives_self:
-                        self._add_token(actor, t.id, t.count)
-                    for t in sk.gives_target:
-                        self._add_token(target, t.id, t.count)
-                    if self._token_count(target, TokenId.RIPOSTE) and target.side != actor.side:
-                        self._consume_once(target, TokenId.RIPOSTE)
-                        back = max(1, self.rng.randint(1, 4))
-                        actor.hp -= back
-                        if actor.side == "heroes":
-                            self.last_trace.damage_to_heroes += back
-                        else:
-                            self.last_trace.damage_to_enemies += back
-                        if actor.hp <= 0:
-                            self._handle_deaths_door(actor)
-                    if sk.cooldown > 0:
-                        state.skill_cooldowns[(actor.id, sk.id)] = sk.cooldown
-                    self._rank_shift(state.heroes if actor.side == "heroes" else state.enemies, actor, sk.move_self)
-                    self._rank_shift(state.heroes if target.side == "heroes" else state.enemies, target, sk.move_target)
-                    rel_delta = 1 if sk.heal > 0 else (-1 if sk.stress_damage > 0 else 0)
-                    if rel_delta and actor.side == "heroes":
-                        self._apply_relationship_event(state, actor, rel_delta)
-                        self.last_trace.relationships_delta += rel_delta
-                for t in (TokenId.STRENGTH, TokenId.WEAK):
-                    self._consume_once(actor, t)
+                if not target.alive:
+                    self.last_trace.skill_name = "pass_no_targets"
+                elif target.is_remnant and (sk.is_friendly or target.side != "enemies"):
+                    self.last_trace.skill_name = "pass_no_targets"
+                else:
+                    target = self._resolve_guarded(state, target)
+                    self.last_trace.skill_name = sk.id
+                    self.last_trace.target_names = [target.id]
+                    if self._roll_hit(actor, target):
+                        if sk.damage_hi > 0:
+                            dmg = self._apply_damage(actor, target, sk)
+                            if target.side == "heroes":
+                                self.last_trace.damage_to_heroes += dmg
+                            else:
+                                self.last_trace.damage_to_enemies += dmg
+                        if sk.heal > 0:
+                            target.hp = min(target.max_hp, target.hp + sk.heal)
+                            self.last_trace.healing_done += sk.heal
+                        if sk.heal_stress > 0:
+                            target.stress = max(0, target.stress - sk.heal_stress)
+                        target.stress = min(10, target.stress + sk.stress_damage)
+                        for t in sk.gives_self:
+                            self._add_token(actor, t.id, t.count)
+                        for t in sk.gives_target:
+                            self._add_token(target, t.id, t.count)
+                        if self._token_count(target, TokenId.RIPOSTE) and target.side != actor.side:
+                            self._consume_once(target, TokenId.RIPOSTE)
+                            back = max(1, self.rng.randint(1, 4))
+                            actor.hp -= back
+                            if actor.side == "heroes":
+                                self.last_trace.damage_to_heroes += back
+                            else:
+                                self.last_trace.damage_to_enemies += back
+                            if actor.hp <= 0:
+                                self._handle_deaths_door(actor)
+                        if sk.cooldown > 0:
+                            state.skill_cooldowns[(actor.id, sk.id)] = sk.cooldown
+                        self._rank_shift(state.heroes if actor.side == "heroes" else state.enemies, actor, sk.move_self)
+                        self._rank_shift(state.heroes if target.side == "heroes" else state.enemies, target, sk.move_target)
+                        rel_delta = 1 if sk.heal > 0 else (-1 if sk.stress_damage > 0 else 0)
+                        if rel_delta and actor.side == "heroes":
+                            self._apply_relationship_event(state, actor, rel_delta)
+                            self.last_trace.relationships_delta += rel_delta
+                    for t in (TokenId.STRENGTH, TokenId.WEAK):
+                        self._consume_once(actor, t)
 
         for u in state.heroes + state.enemies:
             if u.stress >= 10:
                 u.afflicted = True
 
-        if not any(u.alive for u in state.enemies):
-            state.done = True
-            state.heroes_won = True
-        elif not any(u.alive for u in state.heroes):
-            state.done = True
-            state.heroes_won = False
+        self._mark_terminal_if_done(state)
 
         if state.speed_order:
             state.speed_order.pop(0)
