@@ -250,10 +250,11 @@ def _build_mask_and_legal(env: DarkestDungeonEnv, live_obs: dict[str, Any]) -> t
                 )
             )
 
-    if remnant_legal and not any(spec.kind != "pass" for spec in legal):
+    if remnant_legal and not any(spec.kind in {"skill", "item"} for spec in legal):
         # Corpses/remnants do not count for victory, but DD2 can still require
-        # attacking them as blockers when no living enemy is targetable.
-        legal = remnant_legal + [spec for spec in legal if spec.kind == "pass"]
+        # attacking them as blockers when no living enemy is targetable. Prefer
+        # those attacks over movement-only fallbacks.
+        legal = remnant_legal + [spec for spec in legal if spec.kind in {"move", "pass"}]
 
     mask = np.zeros((ACTION_SPACE_SIZE,), dtype=bool)
     for spec in legal:

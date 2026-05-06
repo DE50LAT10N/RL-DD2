@@ -281,7 +281,10 @@ public sealed class StateReader
                     foreach (var guid in entry.ValidTargetGuids)
                     {
                         var (slot, team, alive) = ResolveSlotForGuid(guid, heroByGuid, enemyByGuid);
-                        if (slot < 0 || !alive) continue;
+                        var inactiveEnemyRemnant = !alive
+                            && string.Equals(team, "enemies", StringComparison.OrdinalIgnoreCase)
+                            && IsEnemyRemnantTarget(enemies, slot);
+                        if (slot < 0 || (!alive && !inactiveEnemyRemnant)) continue;
                         if (isItem)
                         {
                             actions.Add(new Dictionary<string, object?>
@@ -321,6 +324,22 @@ public sealed class StateReader
             DebugLog.Warn($"BuildValidLegalActions failed: {ex.Message}");
             return new List<Dictionary<string, object?>>();
         }
+    }
+
+    private static bool IsEnemyRemnantTarget(List<UnitSnapshot> enemies, int slot)
+    {
+        var enemy = enemies.FirstOrDefault(e => e.Slot == slot);
+        if (enemy == null) return false;
+        var text = enemy.Name.ToLowerInvariant();
+        return text.Contains("corpse")
+            || text.Contains("cadaver")
+            || text.Contains("remnant")
+            || text.Contains("tomb")
+            || text.Contains("grave")
+            || text.Contains("gravestone")
+            || text.Contains("headstone")
+            || text.Contains("\u0442\u0440\u0443\u043f")
+            || text.Contains("\u043d\u0430\u0434\u0433\u0440\u043e\u0431");
     }
 
     private readonly struct ValidSkillEntry

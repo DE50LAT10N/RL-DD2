@@ -12,7 +12,7 @@ param(
   [double]$StunnedTurnWait = 12.0,
   [double]$StepDelay = 0.25,
   [int]$ServerCheckRetries = 5,
-  [string]$ExpectedModVersion = "0.1.21-stability",
+  [string]$ExpectedModVersion = "0.1.22-move-skill-id",
   [switch]$DisablePassActions,
   [switch]$AllowPassActions,
   [switch]$DisableEmergencyPass,
