@@ -985,10 +985,87 @@ def main() -> int:
                     if 0 <= banned_idx < action_mask.shape[0]:
                         action_mask[banned_idx] = False
                 if not action_mask.any():
+                    if not args.allow_pass_actions and not _has_skill_or_item_action(legal):
+                        banned_for_key = banned_actions.setdefault(ban_key, set())
+                        banned_deltas = banned_move_deltas.setdefault(ban_key, set())
+                        move_payload = _legal_live_move_payload(obs, banned_for_key, banned_deltas)
+                        if move_payload is not None:
+                            mv_idx, mv_payload = move_payload
+                            print(
+                                "force_move_empty_action_mask "
+                                f"active_side={obs.get('active_side')} active_index={obs.get('active_index')} "
+                                f"action_idx={mv_idx} payload={mv_payload}",
+                                flush=True,
+                            )
+                            obs, reward, done, info = live_env.step(mv_payload)
+                            total_reward += reward
+                            print(f"step={step} action_idx={mv_idx} payload={mv_payload} reward={reward:.3f} done={done} info={info}")
+                            if track_live_stuck_after_step(obs, info):
+                                return 4
+                            if info.get("reason") in {
+                                "move_unavailable",
+                                "move_skill_id_missing",
+                                "move_target_actor_missing",
+                                "move_target_rank_invalid",
+                                "selected_move_path_no_delta",
+                                "selected_skill_path_no_delta",
+                                "no_state_delta_after_ack",
+                                "no_post_state",
+                                "no_ack",
+                            } or (info.get("reason", "").startswith("move_invalid")):
+                                banned_for_key.add(int(mv_idx))
+                                if "move_delta" in mv_payload:
+                                    banned_deltas.add(int(mv_payload["move_delta"]))
+                                print(
+                                    "ban_move_empty_mask_action "
+                                    f"key={ban_key} action_idx={mv_idx} reason={info.get('reason')}",
+                                    flush=True,
+                                )
+                            if done:
+                                print(f"episode_end steps={step} total_reward={total_reward:.3f} heroes_won={info.get('heroes_won')}")
+                                _settle_after_terminal(args)
+                                break
+                            if args.step_delay > 0:
+                                import time
+                                time.sleep(args.step_delay)
+                            continue
+
+                    pass_count = emergency_pass_counts.get(ban_key, 0)
+                    can_emergency_pass = (
+                        not args.disable_emergency_pass
+                        and obs.get("active_side") == "heroes"
+                        and _live_pass_available(legal, obs)
+                        and pass_count < max(0, args.max_emergency_passes_per_turn)
+                    )
+                    if can_emergency_pass:
+                        emergency_pass_counts[ban_key] = pass_count + 1
+                        payload = {"pass_turn": True}
+                        action_idx = model_action_dim - 1
+                        print(
+                            "force_emergency_pass_empty_action_mask "
+                            f"active_side={obs.get('active_side')} active_index={obs.get('active_index')} "
+                            f"round={obs.get('round')} banned_count={len(banned_actions.get(ban_key, set()))}",
+                            flush=True,
+                        )
+                        obs, reward, done, info = live_env.step(payload)
+                        total_reward += reward
+                        print(f"step={step} action_idx={action_idx} payload={payload} reward={reward:.3f} done={done} info={info}")
+                        if track_live_stuck_after_step(obs, info):
+                            return 4
+                        if done:
+                            print(f"episode_end steps={step} total_reward={total_reward:.3f} heroes_won={info.get('heroes_won')}")
+                            _settle_after_terminal(args)
+                            break
+                        if args.step_delay > 0:
+                            import time
+                            time.sleep(args.step_delay)
+                        continue
+
                     print(
                         "safe_stop_empty_action_mask "
                         f"active_side={obs.get('active_side')} active_index={obs.get('active_index')} "
-                        f"pass_actions_allowed={str(args.allow_pass_actions).lower()}",
+                        f"pass_actions_allowed={str(args.allow_pass_actions).lower()} "
+                        f"emergency_pass_count={pass_count}",
                         flush=True,
                     )
                     _maybe_print_terminal(
@@ -1088,6 +1165,8 @@ def main() -> int:
                         f"key={ban_key} action_idx={action_idx} reason={reason}",
                         flush=True,
                     )
+                    if "move_delta" in payload:
+                        banned_move_deltas.setdefault(ban_key, set()).add(int(payload["move_delta"]))
             else:
                 consecutive_noop = 0
 

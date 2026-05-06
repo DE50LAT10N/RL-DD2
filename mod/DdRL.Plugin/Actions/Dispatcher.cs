@@ -129,7 +129,7 @@ public sealed class Dispatcher
                 return false;
             }
 
-            var isItemAction = !string.IsNullOrWhiteSpace(action.ItemId);
+            var isItemAction = !string.IsNullOrWhiteSpace(action.ItemId) && !action.MoveDelta.HasValue;
             methodName = isItemAction ? "item" : "hook";
 
             var actorController = ResolveActorController(actorInstance);
@@ -412,7 +412,7 @@ public sealed class Dispatcher
         var moveAction = action with
         {
             SkillIdx = null,
-            ItemId = null,
+            ItemId = moveSkillId,
             PassTurn = false,
             TargetIdx = targetRank,
             TargetTeam = "heroes",
@@ -936,7 +936,8 @@ public sealed class Dispatcher
 
         try
         {
-            if (!string.IsNullOrWhiteSpace(action.ItemId))
+            var isItemAction = !string.IsNullOrWhiteSpace(action.ItemId) && !action.MoveDelta.HasValue;
+            if (isItemAction)
             {
                 if (actorController != null)
                 {
@@ -961,12 +962,12 @@ public sealed class Dispatcher
             var afterSelectSig = TryBuildStateSignature(probeRoot);
             DebugLog.Info($"Selected-skill path prepared skill_id={plan.SkillId} target_guid={plan.TargetGuid} delta={HasStateDelta(preSig, afterSelectSig)} pre={preSig} post={afterSelectSig}");
 
-            if (!string.IsNullOrWhiteSpace(action.ItemId) && TryExecuteUiItemPath(probeRoot, action, plan, preSig))
+            if (isItemAction && TryExecuteUiItemPath(probeRoot, action, plan, preSig))
             {
                 return true;
             }
 
-            if (string.IsNullOrWhiteSpace(action.ItemId) && TryExecuteUiSkillPath(probeRoot, action, plan, preSig))
+            if (!isItemAction && TryExecuteUiSkillPath(probeRoot, action, plan, preSig))
             {
                 return true;
             }

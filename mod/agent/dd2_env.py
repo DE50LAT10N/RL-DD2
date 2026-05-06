@@ -31,8 +31,11 @@ class DD2Env:
         self.action_timeout = action_timeout
         self.max_no_ack_retries = max(1, int(max_no_ack_retries))
         self.last_state: dict[str, Any] | None = None
+        self.mod_version: str | None = None
         self._request_id = 1000
         self._handshake()
+        if self.mod_version:
+            self._log(f"mod version: {self.mod_version}")
         if self.last_state:
             self._log("initial state received")
         else:
@@ -66,6 +69,10 @@ class DD2Env:
         rid = self._next_request_id()
         self.client.send({"type": "ping", "request_id": rid})
         for msg in self._recv_all(timeout=0.4, max_wait=2.0):
+            if msg.get("type") == "hello":
+                version = msg.get("mod_version")
+                if version:
+                    self.mod_version = str(version)
             if msg.get("type") == "state":
                 self.last_state = msg
 

@@ -7,7 +7,7 @@ namespace DdRL.Plugin.Ipc;
 public static class Protocol
 {
     public const int ProtocolVersion = 1;
-    public const string ModVersion = "0.1.21-stability";
+    public const string ModVersion = "0.1.22-move-skill-id";
 
     public static Dictionary<string, object?> MakeHello(string gameVersion, bool inBattle)
     {
