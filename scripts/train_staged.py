@@ -29,9 +29,14 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--checkpoint-save-path", type=str, default="runs/checkpoints/")
     p.add_argument("--milestone-checkpoints", type=str, default="100000000")
     p.add_argument("--eval-global-freq", type=int, default=25_000)
-    p.add_argument("--best-model-save-path", type=str, default="runs/best/")
+    p.add_argument("--best-model-save-path", type=str, default="runs/dev/staged_best/")
     p.add_argument("--eval-log-path", type=str, default="runs/eval/")
     p.add_argument("--out-prefix", type=str, default="runs/dd2_ppo_stage")
+    p.add_argument(
+        "--allow-runs-best-smoke",
+        action="store_true",
+        help="Forward the protected runs/best smoke override to scripts/train.py.",
+    )
     return p.parse_args()
 
 
@@ -98,6 +103,8 @@ def main() -> int:
         ]
         if args.use_dummy_vec:
             cmd.append("--use-dummy-vec")
+        if args.allow_runs_best_smoke:
+            cmd.append("--allow-runs-best-smoke")
         if resume_path and resume_path.exists():
             cmd.extend(["--resume", str(resume_path)])
 

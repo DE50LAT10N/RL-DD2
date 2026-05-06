@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import json
 from pathlib import Path
 import sys
@@ -32,6 +33,34 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def _series_stats(values: list[float]) -> dict[str, float]:
+    if not values:
+        return {"mean": 0.0, "std": 0.0, "min": 0.0, "p25": 0.0, "median": 0.0, "p75": 0.0, "max": 0.0}
+    ordered = sorted(float(x) for x in values)
+    n = len(ordered)
+
+    def percentile(frac: float) -> float:
+        if n == 1:
+            return ordered[0]
+        pos = frac * (n - 1)
+        lo = int(pos)
+        hi = min(n - 1, lo + 1)
+        weight = pos - lo
+        return ordered[lo] * (1.0 - weight) + ordered[hi] * weight
+
+    mean = sum(ordered) / n
+    variance = sum((x - mean) ** 2 for x in ordered) / n
+    return {
+        "mean": mean,
+        "std": variance ** 0.5,
+        "min": ordered[0],
+        "p25": percentile(0.25),
+        "median": percentile(0.5),
+        "p75": percentile(0.75),
+        "max": ordered[-1],
+    }
+
+
 def main() -> int:
     args = parse_args()
     model_path = Path(args.model)
@@ -42,6 +71,12 @@ def main() -> int:
     aggregate_summary = {"episodes": 0.0, "wins": 0.0, "reward_sum": 0.0, "steps_sum": 0.0, "survival_sum": 0.0}
     aggregate_encounters: dict[str, dict[str, float]] = {}
     normalized: dict[str, dict[str, float]] = {}
+    per_episode: list[dict[str, object]] = []
+    aggregate_action_counts: Counter[str] = Counter()
+    aggregate_terminal_counts: Counter[str] = Counter()
+    all_rewards: list[float] = []
+    all_steps: list[float] = []
+    all_survival_rates: list[float] = []
 
     for seed in seed_values:
         env = DarkestDungeonEnv(seed=seed)
@@ -59,11 +94,17 @@ def main() -> int:
             info = {}
             ep_reward = 0.0
             ep_steps = 0
+            action_counts: Counter[str] = Counter()
+            terminated = False
+            truncated = False
             while not done:
                 act, _ = agent.predict(obs, env.action_masks())
+                action_counts[env._decode_action(int(act)).kind] += 1
                 obs, rew, term, trunc, info = env.step(act)
                 ep_reward += rew
                 ep_steps += 1
+                terminated = bool(term)
+                truncated = bool(trunc)
                 done = term or trunc
             wins += 1 if info.get("heroes_won") else 0
             slot = by_encounter.setdefault(encounter_id, {"episodes": 0, "wins": 0, "reward_sum": 0.0, "steps_sum": 0.0, "survival_sum": 0.0})
@@ -77,6 +118,28 @@ def main() -> int:
             ep_survival = alive / max(1, len(env.state.heroes))
             survival_rates.append(ep_survival)
             slot["survival_sum"] += ep_survival
+            won = bool(info.get("heroes_won"))
+            terminal_key = "win" if won else ("truncated" if truncated else "loss")
+            aggregate_action_counts.update(action_counts)
+            aggregate_terminal_counts[terminal_key] += 1
+            per_episode.append(
+                {
+                    "seed": seed,
+                    "episode": i,
+                    "encounter": encounter_id,
+                    "won": won,
+                    "reward": ep_reward,
+                    "steps": ep_steps,
+                    "survival_rate": ep_survival,
+                    "terminated": terminated,
+                    "truncated": truncated,
+                    "terminal": terminal_key,
+                    "action_counts": dict(sorted(action_counts.items())),
+                }
+            )
+            all_rewards.append(ep_reward)
+            all_steps.append(float(ep_steps))
+            all_survival_rates.append(ep_survival)
         mean_reward = sum(rewards) / max(1, len(rewards))
         mean_steps = sum(steps) / max(1, len(steps))
         survival_rate = sum(survival_rates) / max(1, len(survival_rates))
@@ -148,9 +211,15 @@ def main() -> int:
                 "mean_reward": mean_reward,
                 "mean_steps": mean_steps,
                 "survival_rate": survival_rate,
+                "reward_stats": _series_stats(all_rewards),
+                "steps_stats": _series_stats(all_steps),
+                "survival_stats": _series_stats(all_survival_rates),
             },
             "per_seed": per_seed_results,
             "encounters": normalized,
+            "terminal_counts": dict(sorted(aggregate_terminal_counts.items())),
+            "action_counts": dict(sorted(aggregate_action_counts.items())),
+            "episodes": per_episode,
         }
         out_path = Path(args.out_json)
         out_path.parent.mkdir(parents=True, exist_ok=True)

@@ -28,6 +28,8 @@ HOLDOUT_ENCOUNTERS = [
     "holdout_elite_pair",
     "holdout_elite_swarm",
 ]
+PROTECTED_BEST_MODEL_DIR = (PROJECT_ROOT / "runs" / "best").resolve()
+MIN_PROTECTED_BEST_STEPS = 1_000_000
 PHASE1 = ["gaunt_pair", "lost_battalion_road", "road_fight"]
 PHASE2 = ["gaunt_pair", "cultist_trio", "military_squad", "lost_battalion_road", "swine_pair", "road_fight"]
 PHASE2B = PHASE2 + ["ghoul_solo"]
@@ -162,7 +164,7 @@ def parse_args() -> argparse.Namespace:
         help="If <1, linearly decay learning rate to this fraction of --learning-rate by end of training.",
     )
     parser.add_argument("--run-meta-out", type=str, default="", help="Optional JSON path for run configuration metadata.")
-    parser.add_argument("--best-model-save-path", type=str, default="runs/best/", help="Directory for eval best_model.zip.")
+    parser.add_argument("--best-model-save-path", type=str, default="runs/dev/best/", help="Directory for eval best_model.zip.")
     parser.add_argument("--eval-log-path", type=str, default="runs/eval/", help="Directory for eval metrics.")
     parser.add_argument("--checkpoint-save-path", type=str, default="runs/checkpoints/", help="Directory for periodic and milestone checkpoints.")
     parser.add_argument(
@@ -183,6 +185,11 @@ def parse_args() -> argparse.Namespace:
         default="100000000",
         help="Comma-separated global timesteps to save exact milestone checkpoints.",
     )
+    parser.add_argument(
+        "--allow-runs-best-smoke",
+        action="store_true",
+        help="Allow short runs to overwrite runs/best/best_model.zip. Intended only for deliberate debugging.",
+    )
     return parser.parse_args()
 
 
@@ -195,6 +202,21 @@ def _make_env(seed: int, max_episode_steps: int, total_steps: int) -> Callable[[
 
 def main() -> int:
     args = parse_args()
+    best_model_dir = Path(args.best_model_save_path)
+    if not best_model_dir.is_absolute():
+        best_model_dir = PROJECT_ROOT / best_model_dir
+    best_model_dir = best_model_dir.resolve()
+    if (
+        best_model_dir == PROTECTED_BEST_MODEL_DIR
+        and args.steps < MIN_PROTECTED_BEST_STEPS
+        and not args.allow_runs_best_smoke
+    ):
+        raise ValueError(
+            "Refusing to write a short training run to runs/best/best_model.zip. "
+            f"steps={args.steps} is below {MIN_PROTECTED_BEST_STEPS}. "
+            "Use a run-local --best-model-save-path for smoke tests, or pass "
+            "--allow-runs-best-smoke if this overwrite is intentional."
+        )
     if args.device == "auto":
         selected_device = "cuda" if torch.cuda.is_available() else "cpu"
     else:
