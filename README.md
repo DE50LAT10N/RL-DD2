@@ -6,16 +6,6 @@ This repository is intended primarily as a portfolio/resume project demonstratin
 
 The goal is to move tactical behavior into the model rather than hand-written live fallbacks: healing priority, stress management, movement discipline, target selection, tokens, DOTs, Death's Door, and action legality are represented in the simulator and reward function so the agent can learn them.
 
-## Legal Notice
-
-Read [LEGAL_NOTICE.md](LEGAL_NOTICE.md) before using or publishing this project.
-
-- **No affiliation:** Darkest Dungeon, Darkest Dungeon II, Red Hook Studios, Steam, Valve, BepInEx, and related names, logos, characters, art, audio, code, and other materials belong to their respective owners.
-- **No game assets included:** This repository should not contain proprietary game assets, extracted content, copyrighted art/audio/text, or decompiled game code.
-- **Research and portfolio use:** The project is provided as an educational, non-commercial, single-player AI research prototype.
-- **Use at your own risk:** Live-game integration may conflict with game updates, local save files, platform rules, anti-cheat/security checks, or the game's EULA. You are responsible for reviewing and complying with all applicable licenses and terms.
-- **Official modding context:** Darkest Dungeon II has Steam Workshop support, but this project's optional live integration uses a BepInEx-based local plugin path rather than a purely official Workshop workflow.
-- **No legal advice:** Nothing in this repository or README is legal advice.
 
 ## Tech Stack
 
@@ -54,6 +44,37 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
+### BepInEx Setup
+
+The live plugin requires BepInEx to be installed in the Darkest Dungeon II game folder before running `mod/install.ps1`.
+
+1. Download a BepInEx **Unity IL2CPP Windows x64** build from the official BepInEx sources:
+   - Docs: https://docs.bepinex.dev/master/articles/user_guide/installation/unity_il2cpp.html
+   - Builds: https://builds.bepinex.dev/projects/bepinex_be
+
+2. Extract the archive into the DD2 game root, the same folder that contains `Darkest Dungeon II.exe`.
+
+   Example:
+
+   ```text
+   D:\SteamLibrary\steamapps\common\Darkest Dungeon II\
+     BepInEx\
+     doorstop_config.ini
+     winhttp.dll
+     Darkest Dungeon II.exe
+   ```
+
+3. Start the game once and close it after the main menu loads. BepInEx should generate:
+
+   ```text
+   BepInEx\config\
+   BepInEx\LogOutput.log
+   ```
+
+   The first IL2CPP launch can take longer than usual because BepInEx generates interop files.
+
+4. If `BepInEx\LogOutput.log` exists and does not show loader errors, install the DDRL plugin with the command below.
+
 
 Build and install the DD2 plugin into your game folder:
 
