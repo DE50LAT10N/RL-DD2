@@ -5,7 +5,7 @@
     "state": {"required": ["type", "state"]},
     "action": {
       "required": ["type", "request_id", "hero_slot", "method"],
-      "optional": ["skill_idx", "target_idx", "item_id", "pass_turn"]
+      "optional": ["skill_idx", "skill_id", "target_idx", "target_team", "item_id", "move_delta", "move_skill_id", "pass_turn"]
     },
     "ack": {"required": ["type", "request_id", "ok"], "optional": ["method", "reason"]},
     "battle_end": {"required": ["type", "heroes_won"]},

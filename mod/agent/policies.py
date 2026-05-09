@@ -1,3 +1,7 @@
+﻿# Simple baseline policies for live/mod-side diagnostics.
+# Provides deterministic fallback action choices when testing plugin communication.
+# Useful for separating IPC/dispatcher issues from PPO model behavior.
+
 from __future__ import annotations
 
 import random

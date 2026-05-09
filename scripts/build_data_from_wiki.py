@@ -1,3 +1,7 @@
+﻿# Utility for generating local DD2 data overrides from wiki-like sources.
+# Keeps simulator data closer to game skill stats while preserving editable JSON fixtures.
+# Produces configs/data_overrides artifacts used by env.game_data.
+
 from __future__ import annotations
 
 import argparse
@@ -72,12 +76,16 @@ def build_data(output_root: Path) -> None:
                     "source_ranks": [1, 2, 3, 4],
                     "target_ranks": [1, 2, 3, 4],
                     "cooldown": stats["cooldown"],
-                    "damage_lo": stats["damage_lo"],
-                    "damage_hi": stats["damage_hi"],
-                    "crit_chance": stats["crit_chance"],
+                    "charges": 3 if sk == "battlefield_medicine" else 0,
+                    "damage_lo": 0 if sk in {"battlefield_medicine", "bolster", "absinthe"} else stats["damage_lo"],
+                    "damage_hi": 0 if sk in {"battlefield_medicine", "bolster", "absinthe"} else stats["damage_hi"],
+                    "crit_chance": 0.0 if sk in {"battlefield_medicine", "bolster", "absinthe"} else stats["crit_chance"],
                     "is_friendly": sk in {"battlefield_medicine", "bolster", "absinthe"},
-                    "heal": 5 if sk in {"battlefield_medicine", "absinthe"} else 0,
+                    "heal": 5 if sk in {"absinthe"} else 0,
+                    "heal_percent": 0.2 if sk == "battlefield_medicine" else 0.0,
+                    "heal_threshold": 0.5 if sk == "battlefield_medicine" else 0.0,
                     "heal_stress": 1 if sk in {"bolster"} else 0,
+                    "cures_tokens": ["BLEED", "BLIGHT", "BURN"] if sk == "battlefield_medicine" else [],
                 }
             )
         _write_json(output_root / "heroes" / f"{hid}.json", payload)

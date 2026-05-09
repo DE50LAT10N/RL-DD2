@@ -1,3 +1,7 @@
+﻿# Staged training orchestrator.
+# Runs scripts/train.py across increasing milestone budgets while resuming from prior stage outputs.
+# Useful for long training runs with checkpointed progression.
+
 from __future__ import annotations
 
 import argparse
@@ -16,19 +20,26 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--n-envs", type=int, default=8)
     p.add_argument("--device", choices=("auto", "cuda", "cpu"), default="auto")
     p.add_argument("--use-dummy-vec", action="store_true")
-    p.add_argument("--learning-rate", type=float, default=2.5e-4)
-    p.add_argument("--lr-end-ratio", type=float, default=0.08)
-    p.add_argument("--ent-coef", type=float, default=0.01)
+    p.add_argument("--learning-rate", type=float, default=1.5e-4)
+    p.add_argument("--lr-end-ratio", type=float, default=0.04)
+    p.add_argument("--ent-coef", type=float, default=0.005)
     p.add_argument("--net-arch", type=str, default="384,384")
     p.add_argument("--n-steps", type=int, default=1024)
     p.add_argument("--batch-size", type=int, default=256)
     p.add_argument("--n-epochs", type=int, default=4)
     p.add_argument("--gamma", type=float, default=0.995)
-    p.add_argument("--max-episode-steps", type=int, default=120)
+    p.add_argument("--max-episode-steps", type=int, default=180)
     p.add_argument("--checkpoint-global-freq", type=int, default=50_000)
     p.add_argument("--checkpoint-save-path", type=str, default="runs/checkpoints/")
     p.add_argument("--milestone-checkpoints", type=str, default="100000000")
     p.add_argument("--eval-global-freq", type=int, default=25_000)
+    p.add_argument("--eval-episodes", type=int, default=80)
+    p.add_argument("--best-min-global-steps", type=int, default=1_000_000)
+    p.add_argument("--best-reward-window-evals", type=int, default=3)
+    p.add_argument("--drill-ratio", type=float, default=0.28)
+    p.add_argument("--critical-heal-drill-ratio", type=float, default=0.18)
+    p.add_argument("--critical-heal-drill-max-hp-ratio", type=float, default=0.25)
+    p.add_argument("--eval-critical-heal-drill-ratio", type=float, default=0.25)
     p.add_argument("--best-model-save-path", type=str, default="runs/dev/staged_best/")
     p.add_argument("--eval-log-path", type=str, default="runs/eval/")
     p.add_argument("--out-prefix", type=str, default="runs/dd2_ppo_stage")
@@ -42,7 +53,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    milestones = sorted({int(x.strip()) for x in args.milestones.split(",") if x.strip()})
+    milestones = sorted({int(x.strip().replace("_", "")) for x in args.milestones.split(",") if x.strip()})
     if not milestones:
         raise ValueError("No milestones specified.")
     if milestones[0] <= 0:
@@ -90,6 +101,20 @@ def main() -> int:
             args.checkpoint_save_path,
             "--eval-global-freq",
             str(args.eval_global_freq),
+            "--eval-episodes",
+            str(args.eval_episodes),
+            "--best-min-global-steps",
+            str(args.best_min_global_steps),
+            "--best-reward-window-evals",
+            str(args.best_reward_window_evals),
+            "--drill-ratio",
+            str(args.drill_ratio),
+            "--critical-heal-drill-ratio",
+            str(args.critical_heal_drill_ratio),
+            "--critical-heal-drill-max-hp-ratio",
+            str(args.critical_heal_drill_max_hp_ratio),
+            "--eval-critical-heal-drill-ratio",
+            str(args.eval_critical_heal_drill_ratio),
             "--milestone-checkpoints",
             args.milestone_checkpoints,
             "--best-model-save-path",

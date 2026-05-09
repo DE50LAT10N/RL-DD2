@@ -1,3 +1,7 @@
+﻿// Optional reflection discovery dumper for DD2 classes and members.
+// Helps maintain hook/dispatcher class paths when game internals shift.
+// Runs only when discovery dump config is enabled.
+
 using System;
 using System.Collections.Generic;
 using System.IO;

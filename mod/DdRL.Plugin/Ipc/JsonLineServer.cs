@@ -1,3 +1,7 @@
+﻿// TCP JSON-lines server used by the live Python agent.
+// Sends hello/state/ack messages and receives action/ping requests.
+// Normalizes Newtonsoft JToken values before handing them to plugin logic.
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

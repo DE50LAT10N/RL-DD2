@@ -61,12 +61,16 @@
         4
       ],
       "cooldown": 0,
-      "damage_lo": 1,
-      "damage_hi": 2,
-      "crit_chance": 0.1,
+      "charges": 3,
+      "damage_lo": 0,
+      "damage_hi": 0,
+      "crit_chance": 0.0,
       "is_friendly": true,
-      "heal": 5,
-      "heal_stress": 0
+      "heal": 0,
+      "heal_percent": 0.2,
+      "heal_threshold": 0.5,
+      "heal_stress": 0,
+      "cures_tokens": ["BLEED", "BLIGHT", "BURN"]
     },
     {
       "id": "blinding_gas",

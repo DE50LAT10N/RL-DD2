@@ -1,3 +1,7 @@
+﻿// Shared logging facade for the BepInEx plugin.
+// Keeps plugin diagnostics consistent across state, IPC, hooks, and dispatcher code.
+// Falls back safely when the BepInEx logger is unavailable.
+
 using BepInEx.Logging;
 
 namespace DdRL.Plugin.Logging;

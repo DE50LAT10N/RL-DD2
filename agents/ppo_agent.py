@@ -1,3 +1,7 @@
+﻿# PPO model wrapper for saving, loading, and inference.
+# Centralizes Stable-Baselines/MaskablePPO access for training, eval, and live play.
+# Depends on sb3-contrib and the project environment action mask contract.
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,7 +1,12 @@
+﻿# Offline holdout evaluator for trained PPO models.
+# Reports win rate, rewards, terminal reasons, action mix, and tactical metrics.
+# Depends on PPOAgent, DarkestDungeonEnv, and env.tactical_metrics.
+
 from __future__ import annotations
 
 import argparse
 from collections import Counter
+import copy
 import json
 from pathlib import Path
 import sys
@@ -12,6 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from agents.ppo_agent import PPOAgent
 from env.dd_env import DarkestDungeonEnv
+from env.tactical_metrics import TacticalMetrics, attach_skill_lookup, composite_score
 
 
 HOLDOUT_ENCOUNTERS = [
@@ -74,12 +80,14 @@ def main() -> int:
     per_episode: list[dict[str, object]] = []
     aggregate_action_counts: Counter[str] = Counter()
     aggregate_terminal_counts: Counter[str] = Counter()
+    tactical = attach_skill_lookup(TacticalMetrics(), None)
     all_rewards: list[float] = []
     all_steps: list[float] = []
     all_survival_rates: list[float] = []
 
     for seed in seed_values:
         env = DarkestDungeonEnv(seed=seed)
+        tactical._backend = env.backend  # type: ignore[attr-defined]
         agent = PPOAgent.load(model_path, env=env)
         episodes = args.episodes
         wins = 0
@@ -98,9 +106,13 @@ def main() -> int:
             terminated = False
             truncated = False
             while not done:
+                before_state = copy.deepcopy(env.state)
+                legal = env.backend.legal_action_specs(env.state)
                 act, _ = agent.predict(obs, env.action_masks())
-                action_counts[env._decode_action(int(act)).kind] += 1
+                chosen = next((a for a in legal if env._encode_action(a) == int(act)), env._decode_action(int(act)))
+                action_counts[chosen.kind] += 1
                 obs, rew, term, trunc, info = env.step(act)
+                tactical.observe_decision(before_state, legal, chosen, env.backend.last_trace, env.state)
                 ep_reward += rew
                 ep_steps += 1
                 terminated = bool(term)
@@ -183,6 +195,16 @@ def main() -> int:
         f"survival_rate={survival_rate:.2%}"
     )
     print(summary)
+    tactical_summary = tactical.summary()
+    score = composite_score(mean_reward, tactical_summary)
+    print(
+        "tactical_metrics: "
+        f"critical_heal_success_rate={tactical_summary['critical_heal_success_rate']:.2%} "
+        f"bad_pass_rate={tactical_summary['bad_pass_rate']:.2%} "
+        f"wasted_heal_rate={tactical_summary['wasted_heal_rate']:.2%} "
+        f"kill_confirm_rate={tactical_summary['kill_confirm_rate']:.2%} "
+        f"composite_score={score:.3f}"
+    )
     print("encounter_breakdown:")
     for encounter_id, row in sorted(aggregate_encounters.items()):
         eps = max(1.0, row["episodes"])
@@ -214,7 +236,9 @@ def main() -> int:
                 "reward_stats": _series_stats(all_rewards),
                 "steps_stats": _series_stats(all_steps),
                 "survival_stats": _series_stats(all_survival_rates),
+                "composite_score": score,
             },
+            "tactical_metrics": tactical_summary,
             "per_seed": per_seed_results,
             "encounters": normalized,
             "terminal_counts": dict(sorted(aggregate_terminal_counts.items())),

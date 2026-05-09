@@ -1,3 +1,7 @@
+﻿// Message protocol constants and response builders for DDRL IPC.
+// Defines mod version, hello/state/ack/pong/battle_end/error payloads.
+// run_live_game.ps1 checks ModVersion to prevent stale plugin runs.
+
 using System;
 using System.Collections.Generic;
 using DdRL.Plugin.State;
@@ -7,7 +11,7 @@ namespace DdRL.Plugin.Ipc;
 public static class Protocol
 {
     public const int ProtocolVersion = 1;
-    public const string ModVersion = "0.1.22-move-skill-id";
+    public const string ModVersion = "0.1.27-move-arg-binding";
 
     public static Dictionary<string, object?> MakeHello(string gameVersion, bool inBattle)
     {

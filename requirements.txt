@@ -1,3 +1,7 @@
+﻿# Python dependencies for training, evaluation, notebooks, and live PPO.
+# Uses PyTorch CUDA wheels by default via the extra index below.
+# Install inside a virtual environment before running scripts or notebooks.
+
 # CUDA wheels (Windows/Linux). If install fails, try cu126: same block with
 # https://download.pytorch.org/whl/cu126
 --extra-index-url https://download.pytorch.org/whl/cu128

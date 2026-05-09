@@ -1,3 +1,7 @@
+﻿// Live DD2 battle state reader.
+// Reflects combat teams, active unit, stats, tokens, and authoritative legal actions from the game.
+// Feeds Snapshot messages to the JSON-lines IPC server.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -131,9 +135,12 @@ public sealed class StateReader
             var hp = ReadInt(u, new[] { "DisplayedHp", "HpRounded", "CurrentHP", "HP", "Health" }, 0);
             var maxHp = ReadInt(u, new[] { "DisplayedHpMax", "CurrentHpMax", "MaxHP", "MaxHealth" }, hp);
             var rank = ReadInt(u, new[] { "TeamPosition", "Rank", "CombatRank", "Position" }, slot + 1);
+            var stress = ReadInt(u, new[] { "Stress", "CurrentStress", "DisplayedStress", "m_Stress" }, 0);
+            var speed = ReadInt(u, new[] { "Speed", "CombatSpeed", "m_Speed" }, 0);
+            var size = ReadInt(u, new[] { "Size", "CombatSize", "m_Size" }, 1);
             var alive = ReadBool(u, new[] { "IsLiving", "IsAlive", "Alive" }, hp > 0);
             var tokens = ReadTokens(u);
-            list.Add(new UnitSnapshot(name, slot, alive, hp, maxHp, rank, tokens));
+            list.Add(new UnitSnapshot(name, slot, alive, hp, maxHp, rank, stress, speed, size, tokens));
             slot++;
         }
         return list;
@@ -157,9 +164,12 @@ public sealed class StateReader
             var hp = ReadInt(u, new[] { "DisplayedHp", "HpRounded", "CurrentHP", "HP", "Health" }, 0);
             var maxHp = ReadInt(u, new[] { "DisplayedHpMax", "CurrentHpMax", "MaxHP", "MaxHealth" }, hp);
             var rank = ReadInt(u, new[] { "TeamPosition", "Rank", "CombatRank", "Position" }, slot + 1);
+            var stress = ReadInt(u, new[] { "Stress", "CurrentStress", "DisplayedStress", "m_Stress" }, 0);
+            var speed = ReadInt(u, new[] { "Speed", "CombatSpeed", "m_Speed" }, 0);
+            var size = ReadInt(u, new[] { "Size", "CombatSize", "m_Size" }, 1);
             var alive = ReadBool(u, new[] { "IsLiving", "IsAlive", "Alive" }, hp > 0);
             var tokens = ReadTokens(u);
-            list.Add(new UnitSnapshot(name, slot, alive, hp, maxHp, rank, tokens));
+            list.Add(new UnitSnapshot(name, slot, alive, hp, maxHp, rank, stress, speed, size, tokens));
             slot++;
         }
 
@@ -241,7 +251,8 @@ public sealed class StateReader
                     var skillId = entry.SkillId ?? string.Empty;
                     if (string.IsNullOrWhiteSpace(skillId)) continue;
 
-                    // Pass-turn skill: emit a single pass_turn action.
+                    // Pass-like entries appear in the game's valid target list, but the
+                    // current dispatcher cannot commit them reliably. Track for logs only.
                     if (skillId.IndexOf("pass", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         sawPassEntry = true;
@@ -261,6 +272,10 @@ public sealed class StateReader
                             if (!ally.alive) continue;
                             var delta = ally.slot - actorRank;
                             if (delta == 0) continue;
+                            // The generic DD2 combat move is a neighboring rank swap.
+                            // Some target-entry probes include farther allies, but committing
+                            // those through the move skill path often produces no state delta.
+                            if (Math.Abs(delta) != 1) continue;
                             actions.Add(new Dictionary<string, object?>
                             {
                                 ["hero_slot"] = activeIndex,
@@ -291,6 +306,7 @@ public sealed class StateReader
                             {
                                 ["hero_slot"] = activeIndex,
                                 ["item_id"] = skillId,
+                                ["skill_id"] = skillId,
                                 ["target_idx"] = slot,
                                 ["target_team"] = team,
                             });
@@ -302,6 +318,7 @@ public sealed class StateReader
                             {
                                 ["hero_slot"] = activeIndex,
                                 ["skill_idx"] = skillIdx,
+                                ["skill_id"] = skillId,
                                 ["target_idx"] = slot,
                                 ["target_team"] = team,
                             });
@@ -312,11 +329,10 @@ public sealed class StateReader
             }
             else
             {
-                DebugLog.Info("BuildValidLegalActions: GetValidSkillTargetEntries returned empty; emitting pass only and waiting for a valid hero action frame.");
+                DebugLog.Info("BuildValidLegalActions: GetValidSkillTargetEntries returned empty; waiting for a valid hero action frame.");
             }
 
-            actions.Add(new Dictionary<string, object?> { ["pass_turn"] = true });
-            DebugLog.Info($"BuildValidLegalActions emitted={emitted} emitted_items={emittedItems} emitted_moves={emittedMoves} entries={(validEntries?.Count ?? 0)} pass_entry_seen={sawPassEntry} move_skill_id={moveSkillIdSeen ?? "?"} actor_rank={actorRank}.");
+            DebugLog.Info($"BuildValidLegalActions emitted={emitted} emitted_items={emittedItems} emitted_moves={emittedMoves} entries={(validEntries?.Count ?? 0)} pass_entry_seen={sawPassEntry} move_skill_id={moveSkillIdSeen ?? "?"} actor_rank={actorRank} actions={actions.Count}.");
             return actions;
         }
         catch (Exception ex)

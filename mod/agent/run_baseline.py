@@ -1,3 +1,7 @@
+﻿# CLI entry point for running baseline policies against the live plugin.
+# Helps validate IPC and action execution without loading an RL model.
+# Depends on mod.agent.dd2_env and policies.py.
+
 from __future__ import annotations
 
 import argparse

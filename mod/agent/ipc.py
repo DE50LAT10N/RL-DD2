@@ -1,3 +1,7 @@
+﻿# Low-level JSON-lines IPC client for the DD2 plugin.
+# Provides socket connection, send, receive, and timeout behavior for live control.
+# Shared by mod-side baseline and live environment wrappers.
+
 from __future__ import annotations
 
 import json

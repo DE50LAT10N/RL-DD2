@@ -1,3 +1,7 @@
+﻿// Executes queued live actions inside DD2 via reflection/UI paths.
+// Bridges model-chosen JSON actions to game skill, item, move, and pass commits.
+// Depends on CombatHooks, StateReader signatures, and guarded reflection helpers.
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -177,7 +181,7 @@ public sealed class Dispatcher
         var values = new List<object?>(ps.Length);
         foreach (var p in ps)
         {
-            values.Add(ConvertArgumentValue(p.ParameterType, action));
+            values.Add(ConvertArgumentValue(p, action));
         }
 
         return values.ToArray();
@@ -235,14 +239,32 @@ public sealed class Dispatcher
             ?? actorInstance.GetType().GetField("m_ActorController", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(actorInstance);
     }
 
-    private static object? ConvertArgumentValue(Type targetType, PendingAction action)
+    private static object? ConvertArgumentValue(ParameterInfo parameter, PendingAction action)
     {
+        var targetType = parameter.ParameterType;
+        var paramName = parameter.Name ?? string.Empty;
         if (targetType == typeof(string))
         {
             return action.ItemId ?? string.Empty;
         }
 
-        var numeric = action.TargetIdx ?? action.SkillIdx ?? action.HeroSlot;
+        var wantsTarget =
+            paramName.IndexOf("target", StringComparison.OrdinalIgnoreCase) >= 0
+            || paramName.IndexOf("guid", StringComparison.OrdinalIgnoreCase) >= 0;
+        var wantsSkill =
+            paramName.IndexOf("skill", StringComparison.OrdinalIgnoreCase) >= 0
+            || paramName.IndexOf("button", StringComparison.OrdinalIgnoreCase) >= 0;
+        var wantsActor =
+            paramName.IndexOf("actor", StringComparison.OrdinalIgnoreCase) >= 0
+            || paramName.IndexOf("hero", StringComparison.OrdinalIgnoreCase) >= 0
+            || paramName.IndexOf("slot", StringComparison.OrdinalIgnoreCase) >= 0;
+        var numeric = wantsTarget
+            ? action.TargetIdx ?? action.SkillIdx ?? action.HeroSlot
+            : wantsSkill
+                ? action.SkillIdx ?? action.TargetIdx ?? action.HeroSlot
+                : wantsActor
+                    ? action.HeroSlot
+                    : action.SkillIdx ?? action.TargetIdx ?? action.HeroSlot;
         if (targetType.IsEnum)
         {
             return Enum.ToObject(targetType, numeric);
@@ -409,9 +431,10 @@ public sealed class Dispatcher
         {
             equipped.Add(moveSkillId);
         }
+        var moveSkillIdx = equipped.FindIndex(id => string.Equals(id, moveSkillId, StringComparison.Ordinal));
         var moveAction = action with
         {
-            SkillIdx = null,
+            SkillIdx = moveSkillIdx >= 0 ? moveSkillIdx : null,
             ItemId = moveSkillId,
             PassTurn = false,
             TargetIdx = targetRank,
@@ -420,7 +443,7 @@ public sealed class Dispatcher
         var plan = new SkillPlan(equipped, moveSkillId, targetGuid, isValidSkill, isValidTarget);
         DebugLog.Info(
             $"TryExecuteMove: invoking selected-skill path move_skill_id={moveSkillId} delta={moveDelta} " +
-            $"actor_rank={actorRank} target_rank={targetRank} target_guid={targetGuid} " +
+            $"actor_rank={actorRank} target_rank={targetRank} target_guid={targetGuid} skill_idx={moveAction.SkillIdx?.ToString() ?? "null"} " +
             $"valid_skill={FormatNullableBool(isValidSkill)} valid_target={FormatNullableBool(isValidTarget)}.");
 
         if (TryExecuteSelectedSkillPath(probeRoot, actor, actorController, moveAction, plan, preSig))

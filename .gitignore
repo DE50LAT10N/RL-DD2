@@ -11,19 +11,34 @@ venv/
 .pydeps/
 .dotnet/
 .dotnet_home/
+.dotnet-home/
+.uv-cache/
 .nuget/
 
 # Training outputs and model artifacts
 runs/*
 !runs/best/
 runs/best/*
+!runs/best/best_model.zip
+!runs/dd2_ppo_110m_v1/
+runs/dd2_ppo_110m_v1/*
+!runs/dd2_ppo_110m_v1/final_model.zip
 runs_*/
 models/
+checkpoints/
+*.bin
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.gguf
+*.onnx
 *.zip
 *.pkl
 *.npz
 events.out.tfevents.*
 !runs/best/best_model.zip
+!runs/dd2_ppo_110m_v1/final_model.zip
 
 # .NET build outputs
 bin/

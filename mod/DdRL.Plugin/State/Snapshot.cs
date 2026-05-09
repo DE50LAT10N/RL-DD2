@@ -1,3 +1,7 @@
+﻿// Serializable live battle snapshot model.
+// Converts plugin-read unit/action state into JSON dictionaries for Python.
+// Includes unit stats, tokens, deaths-door/death-armor, and precomputed legal actions.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +17,9 @@ public sealed record UnitSnapshot(
     int Hp,
     int MaxHp,
     int Rank,
+    int Stress,
+    int Speed,
+    int Size,
     List<UnitToken> Tokens);
 
 public sealed record Snapshot(
@@ -53,7 +60,6 @@ public sealed record Snapshot(
         var actions = new List<Dictionary<string, object?>>();
         if (Done || !InBattle)
         {
-            actions.Add(new Dictionary<string, object?> { ["pass_turn"] = true });
             return actions;
         }
 
@@ -86,8 +92,6 @@ public sealed record Snapshot(
                 });
             }
         }
-
-        actions.Add(new Dictionary<string, object?> { ["pass_turn"] = true });
         return actions;
     }
 
@@ -101,6 +105,11 @@ public sealed record Snapshot(
             ["hp"] = unit.Hp,
             ["max_hp"] = unit.MaxHp,
             ["rank"] = unit.Rank,
+            ["stress"] = unit.Stress,
+            ["speed"] = unit.Speed,
+            ["size"] = unit.Size,
+            ["death_door"] = unit.Tokens.Any(t => t.Id.IndexOf("death", StringComparison.OrdinalIgnoreCase) >= 0 && t.Id.IndexOf("door", StringComparison.OrdinalIgnoreCase) >= 0),
+            ["death_armor"] = unit.Tokens.Where(t => t.Id.IndexOf("death", StringComparison.OrdinalIgnoreCase) >= 0 && t.Id.IndexOf("armor", StringComparison.OrdinalIgnoreCase) >= 0).Sum(t => t.Count),
             ["tokens"] = unit.Tokens.Select(t => new Dictionary<string, object?>
             {
                 ["id"] = t.Id,

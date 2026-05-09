@@ -1,3 +1,7 @@
+﻿// Harmony hook installer for DD2 combat lifecycle events.
+// Notifies the plugin about turn changes, pending action windows, and battle end.
+// Depends on Harmony/BepInEx and reflected DD2 combat classes.
+
 using System;
 using System.Linq;
 using System.Reflection;

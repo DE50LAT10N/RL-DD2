@@ -1,3 +1,7 @@
+﻿// Central list of DD2 class and method names used by reflection hooks.
+// Keeps fragile game-type discovery in one place for dispatcher/state reader logic.
+// Requires updates when DD2 internals change.
+
 using System;
 using System.Linq;
 

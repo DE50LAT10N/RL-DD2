@@ -1,3 +1,7 @@
+﻿// Optional DD2 ScriptableObject data extractor.
+// Dumps game data for improving simulator fixtures and overrides.
+// Intended for research/debug runs, not normal live inference.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;

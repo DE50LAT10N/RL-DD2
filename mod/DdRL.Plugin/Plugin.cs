@@ -1,3 +1,7 @@
+﻿// BepInEx plugin bootstrap for DDRL.
+// Initializes config, logging, IPC server, state reader, dispatcher, and combat hooks.
+// Entry point loaded by DD2 through BepInEx.
+
 using System;
 using System.Collections.Generic;
 using System.IO;

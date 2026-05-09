@@ -1,3 +1,7 @@
+﻿# Python IPC client environment for the DD2 BepInEx plugin.
+# Sends actions, receives live battle states, and computes lightweight live rewards.
+# Used by live PPO and diagnostic mod-agent scripts.
+
 from __future__ import annotations
 
 import copy
@@ -299,8 +303,8 @@ class DD2Env:
                 "grave",
                 "gravestone",
                 "headstone",
-                "труп",
-                "надгроб",
+                "С‚СЂСѓРї",
+                "РЅР°РґРіСЂРѕР±",
             )
         )
 

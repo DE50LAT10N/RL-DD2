@@ -1,3 +1,7 @@
+﻿# Game data validation utility.
+# Loads fixtures and overrides to catch malformed heroes, monsters, tokens, items, and encounters.
+# Intended for CI or pre-training sanity checks.
+
 from __future__ import annotations
 
 import argparse

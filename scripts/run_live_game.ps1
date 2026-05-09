@@ -1,3 +1,7 @@
+﻿# Launch helper for running PPO against a live DD2 process.
+# Validates the game/plugin, resolves Python/model paths, and forwards runtime options.
+# Depends on the BepInEx plugin IPC server and scripts/live_ppo.py.
+
 param(
   [string]$HostName = "127.0.0.1",
   [int]$Port = 8765,
@@ -10,19 +14,20 @@ param(
   [double]$ActionTimeout = 10.0,
   [double]$EnemyTurnWait = 60.0,
   [double]$StunnedTurnWait = 12.0,
+  [double]$LegalActionWait = 8.0,
+  [int]$LegalStablePolls = 3,
   [double]$StepDelay = 0.25,
+  [double]$PostActionSettle = 0.75,
   [int]$ServerCheckRetries = 5,
-  [string]$ExpectedModVersion = "0.1.22-move-skill-id",
-  [switch]$DisablePassActions,
-  [switch]$AllowPassActions,
-  [switch]$DisableEmergencyPass,
-  [switch]$AllowPolicyMoveActions,
+  [string]$ExpectedModVersion = "0.1.27-move-arg-binding",
   [string]$Python = "",
   [string[]]$GameProcessNames = @("Darkest Dungeon II", "DarkestDungeonII", "DarkestDungeon2", "Darkest Dungeon 2"),
   [switch]$Stochastic,
   [switch]$Quiet,
   [switch]$SkipProcessCheck,
-  [switch]$AllowOutOfBattle
+  [switch]$AllowOutOfBattle,
+  [switch]$LogLegalActions,
+  [string]$ActionLog = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -241,7 +246,10 @@ $argsList = @(
   "--action-timeout", "$ActionTimeout",
   "--enemy-turn-wait", "$EnemyTurnWait",
   "--stunned-turn-wait", "$StunnedTurnWait",
+  "--legal-action-wait", "$LegalActionWait",
+  "--legal-stable-polls", "$LegalStablePolls",
   "--step-delay", "$StepDelay",
+  "--post-action-settle", "$PostActionSettle",
   "--mode", $Mode
 )
 
@@ -254,16 +262,12 @@ if ($Stochastic) {
 if ($Quiet) {
   $argsList += "--quiet"
 }
-if ($AllowPassActions -and -not $DisablePassActions) {
-  $argsList += "--allow-pass-actions"
+if ($LogLegalActions) {
+  $argsList += "--log-legal-actions"
 }
-if ($DisableEmergencyPass) {
-  $argsList += "--disable-emergency-pass"
+if (-not [string]::IsNullOrWhiteSpace($ActionLog)) {
+  $argsList += @("--action-log", $ActionLog)
 }
-if ($AllowPolicyMoveActions) {
-  $argsList += "--allow-policy-move-actions"
-}
-
 Write-Host "Starting live agent: $pythonExe $($argsList -join ' ')"
 & $pythonExe @argsList
 exit $LASTEXITCODE

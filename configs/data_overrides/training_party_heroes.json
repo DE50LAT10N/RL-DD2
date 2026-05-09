@@ -3,41 +3,65 @@
     "man_at_arms": {
       "id": "man_at_arms",
       "name": "Man-at-Arms",
+      "hp": 38,
+      "speed": 3,
+      "move_distance": 1,
+      "deathblow_resist": 0.75,
+      "resistances": {"bleed": 0.3, "blight": 0.2, "burn": 0.3, "stun": 0.3, "move": 0.3, "debuff": 0.3},
       "skills": [
         {"id": "wicked_slice", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 4, "damage_hi": 8, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "rampart", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
+        {"id": "rampart", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "gives_target": {"COMBO": 1}},
         {"id": "bolster", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": true, "heal": 0, "heal_stress": 1},
-        {"id": "retribution", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0}
+        {"id": "retribution", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "gives_self": {"TAUNT": 1, "RIPOSTE": 1}},
+        {"id": "defender", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 1, "is_friendly": true, "heal": 0, "heal_stress": 0, "gives_target": {"GUARDED": 1}, "gives_self": {"TAUNT": 1, "BLOCK": 1}}
       ]
     },
     "hellion": {
       "id": "hellion",
       "name": "Hellion",
+      "hp": 42,
+      "speed": 4,
+      "move_distance": 1,
+      "deathblow_resist": 0.75,
+      "resistances": {"bleed": 0.4, "blight": 0.2, "burn": 0.3, "stun": 0.4, "move": 0.4, "debuff": 0.3},
       "skills": [
-        {"id": "wicked_hack", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 5, "damage_hi": 10, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "iron_swan", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 4, "damage_hi": 8, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "bleed_out", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "adrenaline_rush", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 2, "damage_hi": 4, "crit_chance": 0.1, "is_friendly": true, "heal": 4, "heal_stress": 1}
+        {"id": "wicked_hack", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 5, "damage_hi": 10, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "combo_damage_multiplier": 1.5},
+        {"id": "iron_swan", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 5, "damage_hi": 9, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "gives_self": {"WINDED": 1}},
+        {"id": "bleed_out", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 6, "damage_hi": 12, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "dot_type": "BLEED", "dot_amount": 2, "dot_duration": 3, "gives_self": {"WINDED": 1}},
+        {"id": "adrenaline_rush", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 2, "damage_hi": 4, "crit_chance": 0.1, "is_friendly": true, "target_self": true, "heal": 4, "heal_stress": 1, "cures_tokens": ["WINDED"]},
+        {"id": "barbaric_yawp", "source_ranks": [1, 2], "target_ranks": [1, 2], "cooldown": 1, "damage_lo": 0, "damage_hi": 0, "crit_chance": 0.0, "is_friendly": false, "gives_target": {"WEAK": 1}, "gives_self": {"WINDED": 1}}
       ]
     },
     "highwayman": {
       "id": "highwayman",
       "name": "Highwayman",
+      "hp": 35,
+      "speed": 5,
+      "move_distance": 2,
+      "deathblow_resist": 0.75,
+      "resistances": {"bleed": 0.3, "blight": 0.3, "burn": 0.3, "stun": 0.3, "move": 0.4, "debuff": 0.3},
       "skills": [
         {"id": "wicked_slice", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 4, "damage_hi": 8, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "pistol_shot", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "open_vein", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 5, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "double_tap", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 4, "damage_hi": 8, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0}
+        {"id": "pistol_shot", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "combo_damage_multiplier": 1.5},
+        {"id": "open_vein", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 5, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "dot_type": "BLEED", "dot_amount": 2, "dot_duration": 3},
+        {"id": "double_tap", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 4, "damage_hi": 8, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "execution": 1, "combo_damage_multiplier": 1.35},
+        {"id": "take_aim", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 1, "is_friendly": true, "target_self": true, "gives_self": {"CRIT": 1, "DODGE": 1}}
       ]
     },
     "plague_doctor": {
       "id": "plague_doctor",
       "name": "Plague Doctor",
+      "hp": 29,
+      "speed": 4,
+      "move_distance": 1,
+      "deathblow_resist": 0.75,
+      "resistances": {"bleed": 0.2, "blight": 0.5, "burn": 0.3, "stun": 0.2, "move": 0.2, "debuff": 0.4},
       "skills": [
-        {"id": "noxious_blast", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 2, "damage_hi": 3, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "plague_grenade", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 1, "damage_hi": 2, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0},
-        {"id": "battlefield_medicine", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 1, "damage_hi": 2, "crit_chance": 0.1, "is_friendly": true, "heal": 5, "heal_stress": 0},
-        {"id": "blinding_gas", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "damage_lo": 3, "damage_hi": 6, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0}
+        {"id": "noxious_blast", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2], "cooldown": 0, "damage_lo": 2, "damage_hi": 3, "crit_chance": 0.1, "is_friendly": false, "heal": 0, "heal_stress": 0, "dot_type": "BLIGHT", "dot_amount": 2, "dot_duration": 3, "combo_dot_amount": 2, "combo_dot_duration": 3},
+        {"id": "plague_grenade", "source_ranks": [3, 4], "target_ranks": [3, 4], "cooldown": 0, "damage_lo": 1, "damage_hi": 2, "crit_chance": 0.1, "is_friendly": false, "multi_target": true, "heal": 0, "heal_stress": 0, "dot_type": "BLIGHT", "dot_amount": 2, "dot_duration": 3},
+        {"id": "battlefield_medicine", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 0, "charges": 3, "damage_lo": 0, "damage_hi": 0, "crit_chance": 0.0, "is_friendly": true, "heal": 0, "heal_percent": 0.2, "heal_threshold": 0.5, "heal_stress": 0, "cures_tokens": ["BLEED", "BLIGHT", "BURN"]},
+        {"id": "blinding_gas", "source_ranks": [1, 2, 3, 4], "target_ranks": [3, 4], "cooldown": 1, "damage_lo": 0, "damage_hi": 0, "crit_chance": 0.0, "is_friendly": false, "multi_target": true, "gives_target": {"BLIND": 1}},
+        {"id": "ounce_of_prevention", "source_ranks": [1, 2, 3, 4], "target_ranks": [1, 2, 3, 4], "cooldown": 2, "is_friendly": true, "multi_target": true, "heal_stress": 1, "gives_target": {"BLOCK": 1}}
       ]
     }
   }

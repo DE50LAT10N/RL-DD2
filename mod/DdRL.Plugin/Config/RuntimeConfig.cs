@@ -1,3 +1,7 @@
+﻿// Runtime configuration for the DDRL BepInEx plugin.
+// Reads host, port, hook, debug, and dump options from BepInEx config.
+// Used during plugin startup before IPC and hooks are installed.
+
 using BepInEx.Configuration;
 
 namespace DdRL.Plugin.Config;

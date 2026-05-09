@@ -1,3 +1,7 @@
+﻿# Installer for the DDRL BepInEx plugin.
+# Builds the C# plugin and copies runtime dependencies into a DD2 game root.
+# Requires dotnet SDK and write access to the target game folder.
+
 param(
   [string]$GameRoot = "",
   [switch]$Build,

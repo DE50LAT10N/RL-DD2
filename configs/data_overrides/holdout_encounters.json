@@ -3,6 +3,11 @@
     "ghoul_elite": {
       "id": "ghoul_elite",
       "name": "Ghoul Elite",
+      "hp": 42,
+      "speed": 4,
+      "move_distance": 2,
+      "death_armor": 1,
+      "resistances": {"bleed": 0.4, "blight": 0.3, "burn": 0.3, "stun": 0.5, "move": 0.5, "debuff": 0.4},
       "skills": [
         { "id": "elite_claw", "damage_lo": 7, "damage_hi": 11, "crit_chance": 0.12, "stress_damage": 1 },
         { "id": "maul", "damage_lo": 6, "damage_hi": 10, "crit_chance": 0.08, "stress_damage": 2 }
@@ -11,6 +16,10 @@
     "cultist_elite": {
       "id": "cultist_elite",
       "name": "Cultist Elite",
+      "hp": 30,
+      "speed": 5,
+      "move_distance": 1,
+      "resistances": {"bleed": 0.3, "blight": 0.4, "burn": 0.3, "stun": 0.4, "move": 0.3, "debuff": 0.5},
       "skills": [
         { "id": "ritual_stab", "damage_lo": 6, "damage_hi": 9, "crit_chance": 0.1, "stress_damage": 2 },
         { "id": "hex", "damage_lo": 4, "damage_hi": 7, "crit_chance": 0.05, "stress_damage": 3, "gives_target": { "VULNERABLE": 1 } }
