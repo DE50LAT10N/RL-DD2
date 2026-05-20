@@ -1,0 +1,43 @@
+{
+  "algorithm": "MaskedQRDQN",
+  "device": "cuda",
+  "seed": 123,
+  "steps": 10000000,
+  "n_envs": 4,
+  "learning_rate": 0.0001,
+  "lr_end_ratio": 0.08,
+  "net_arch": [
+    384,
+    384
+  ],
+  "n_quantiles": 101,
+  "buffer_size": 1000000,
+  "learning_starts": 50000,
+  "batch_size": 512,
+  "gamma": 0.995,
+  "train_freq": 4,
+  "gradient_steps": 1,
+  "target_update_interval": 10000,
+  "exploration_fraction": 0.18,
+  "exploration_initial_eps": 1.0,
+  "exploration_final_eps": 0.05,
+  "max_grad_norm": 10.0,
+  "resume": null,
+  "out": "d:\\RL DD\\runs\\dd2_qrdqn_10m_v1\\final_model.zip",
+  "best_model_save_path": "d:\\RL DD\\runs\\dd2_qrdqn_10m_v1\\best",
+  "eval_log_path": "d:\\RL DD\\runs\\dd2_qrdqn_10m_v1\\eval",
+  "checkpoint_save_path": "d:\\RL DD\\runs\\dd2_qrdqn_10m_v1\\checkpoints",
+  "eval_global_freq": 100000,
+  "eval_episodes": 80,
+  "best_min_global_steps": 1000000,
+  "best_reward_window_evals": 3,
+  "drill_ratio": 0.28,
+  "critical_heal_drill_ratio": 0.18,
+  "critical_heal_drill_max_hp_ratio": 0.25,
+  "eval_critical_heal_drill_ratio": 0.25,
+  "checkpoint_global_freq": 250000,
+  "milestone_checkpoints": [
+    10000000
+  ],
+  "curriculum_total_steps_per_env": 2500000
+}

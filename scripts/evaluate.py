@@ -16,17 +16,9 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from agents.ppo_agent import PPOAgent
+from env.curriculum import HOLDOUT_ENCOUNTERS
 from env.dd_env import DarkestDungeonEnv
 from env.tactical_metrics import TacticalMetrics, attach_skill_lookup, composite_score
-
-
-HOLDOUT_ENCOUNTERS = [
-    "holdout_double_ghoul",
-    "holdout_double_cultist",
-    "holdout_mix_wave",
-    "holdout_elite_pair",
-    "holdout_elite_swarm",
-]
 
 
 def parse_args() -> argparse.Namespace:

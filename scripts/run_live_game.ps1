@@ -6,7 +6,7 @@ param(
   [string]$HostName = "127.0.0.1",
   [int]$Port = 8765,
   [string]$Model = "runs/best/best_model.zip",
-  [ValidateSet("ppo", "pass_only", "hook_only")]
+  [ValidateSet("ppo", "qrdqn", "pass_only", "hook_only")]
   [string]$Mode = "ppo",
   [int]$MaxSteps = 200,
   [double]$Timeout = 6.0,
@@ -219,7 +219,7 @@ $repoRoot = Resolve-RepoRoot
 $pythonExe = Resolve-Python -Requested $Python -RepoRoot $repoRoot
 $liveScript = Join-Path $repoRoot "scripts\live_ppo.py"
 
-if ($Mode -eq "ppo") {
+if ($Mode -in @("ppo", "qrdqn")) {
   $modelPath = $Model
   if (-not [System.IO.Path]::IsPathRooted($modelPath)) {
     $modelPath = Join-Path $repoRoot $modelPath
@@ -253,7 +253,7 @@ $argsList = @(
   "--mode", $Mode
 )
 
-if ($Mode -eq "ppo") {
+if ($Mode -in @("ppo", "qrdqn")) {
   $argsList += @("--model", $modelPath)
 }
 if ($Stochastic) {

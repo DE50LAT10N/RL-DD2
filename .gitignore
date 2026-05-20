@@ -20,9 +20,23 @@ runs/*
 !runs/best/
 runs/best/*
 !runs/best/best_model.zip
-!runs/dd2_ppo_110m_v1/
-runs/dd2_ppo_110m_v1/*
-!runs/dd2_ppo_110m_v1/final_model.zip
+!runs/dd2_ppo_10m_v1/
+runs/dd2_ppo_10m_v1/*
+!runs/dd2_ppo_10m_v1/final_model.zip
+!runs/dd2_qrdqn_10m_v1/
+runs/dd2_qrdqn_10m_v1/*
+!runs/dd2_qrdqn_10m_v1/best/
+runs/dd2_qrdqn_10m_v1/best/*
+!runs/dd2_qrdqn_10m_v1/best/best_model.zip
+!runs/dd2_qrdqn_10m_v1/eval/
+runs/dd2_qrdqn_10m_v1/eval/*
+!runs/dd2_qrdqn_10m_v1/eval/evaluations.npz
+!runs/dd2_qrdqn_10m_v1/holdout_eval.json
+!runs/dd2_qrdqn_10m_v1/run_meta.json
+!runs/eval/
+runs/eval/*
+!runs/eval/compare_ppo_qrdqn_dashboard.json
+!runs/eval/qrdqn_ready_dashboard.json
 runs_*/
 models/
 checkpoints/
@@ -38,7 +52,9 @@ checkpoints/
 *.npz
 events.out.tfevents.*
 !runs/best/best_model.zip
-!runs/dd2_ppo_110m_v1/final_model.zip
+!runs/dd2_ppo_10m_v1/final_model.zip
+!runs/dd2_qrdqn_10m_v1/best/best_model.zip
+!runs/dd2_qrdqn_10m_v1/eval/evaluations.npz
 
 # .NET build outputs
 bin/

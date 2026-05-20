@@ -29,8 +29,9 @@ mod/                     BepInEx plugin and optional mod-side Python diagnostics
 notebooks/               training dashboard notebook
 scripts/                 training, evaluation, live play, replay, promotion, readiness tools
 tests/fixtures/          compact game-data fixtures used by the simulator
-runs/best/               canonical best model location
-runs/dd2_ppo_110m_v1/    final selected long-run model artifact
+runs/best/               canonical PPO model location
+runs/dd2_ppo_10m_v1/     selected PPO 10M final model for comparison
+runs/dd2_qrdqn_10m_v1/   selected QR-DQN model and compact eval metadata
 ```
 
 ## Installation
@@ -116,6 +117,32 @@ If Windows multiprocessing blocks `SubprocVecEnv`, add:
 --use-dummy-vec
 ```
 
+Train a Masked QR-DQN comparison agent:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\train_qrdqn.py `
+  --steps 10000000 `
+  --seed 123 `
+  --n-envs 4 `
+  --device cuda `
+  --learning-rate 0.0001 `
+  --lr-end-ratio 0.08 `
+  --net-arch 384,384 `
+  --n-quantiles 101 `
+  --buffer-size 1000000 `
+  --learning-starts 50000 `
+  --batch-size 512 `
+  --gamma 0.995 `
+  --train-freq 4 `
+  --gradient-steps 1 `
+  --target-update-interval 10000 `
+  --exploration-final-eps 0.05 `
+  --max-episode-steps 120 `
+  --best-model-save-path runs\dd2_qrdqn_10m_v1\best `
+  --out runs\dd2_qrdqn_10m_v1\final_model.zip `
+  --run-meta-out runs\dd2_qrdqn_10m_v1\run_meta.json
+```
+
 ## Evaluation
 
 Offline holdout evaluation:
@@ -126,6 +153,29 @@ Offline holdout evaluation:
   --episodes 200 `
   --seeds 17,27,37 `
   --out-json runs\eval\holdout.json
+```
+
+Compare PPO, QR-DQN, and simulator baselines on the same holdout seeds:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\evaluate_compare.py `
+  --ppo-model runs\best\best_model.zip `
+  --qrdqn-model runs\dd2_qrdqn_10m_v1\best\best_model.zip `
+  --baselines scripted,random `
+  --episodes 200 `
+  --seeds 17,27,37 `
+  --out-json runs\eval\compare_ppo_qrdqn_dashboard.json
+```
+
+Gate QR-DQN as a meaningful PPO comparison agent:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\check_qrdqn_ready.py `
+  --compare-json runs\eval\compare_ppo_qrdqn_dashboard.json `
+  --min-win-rate 0.35 `
+  --min-ppo-win-ratio 0.70 `
+  --min-scripted-win-ratio 0.50 `
+  --out-json runs\eval\qrdqn_ready_dashboard.json
 ```
 
 Pre-live readiness gate:
@@ -152,21 +202,47 @@ powershell -ExecutionPolicy Bypass -File ".\scripts\run_live_game.ps1" `
   -ActionLog ".\runs\live_action_log.jsonl"
 ```
 
+Run a trained QR-DQN comparison model live:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File ".\scripts\run_live_game.ps1" `
+  -Mode qrdqn `
+  -Model ".\runs\dd2_qrdqn_10m_v1\best\best_model.zip" `
+  -MaxSteps 40 `
+  -LogLegalActions `
+  -ActionLog ".\runs\live_qrdqn_action_log.jsonl"
+```
+
 The live runner uses the game's `legal_actions` as the validity boundary. Tactical preferences should be learned through simulator rewards and drills rather than live-only action overrides.
 
-## Model Selection
+## Model Artifacts
 
-The canonical best model is:
+The repository intentionally keeps only the compact artifacts needed to reproduce evaluation and live demos. Intermediate checkpoints, TensorBoard logs, smoke runs, and local live logs are ignored.
+
+The canonical PPO model is:
 
 ```text
 runs/best/best_model.zip
 ```
 
-The selected final model is:
+The PPO 10M final model is kept for a fuller comparison snapshot:
 
 ```text
-runs/dd2_ppo_110m_v1/final_model.zip
+runs/dd2_ppo_10m_v1/final_model.zip
 ```
 
-This final artifact is selected because `dd2_ppo_110m_v1` is the highest-version training run present in the repository and its `final_model.zip` is the largest model artifact among the available final models, which is a reasonable proxy when loss curves are not stored in source-controlled metadata.
+The canonical QR-DQN comparison model is:
 
+```text
+runs/dd2_qrdqn_10m_v1/best/best_model.zip
+```
+
+The QR-DQN run metadata and compact evaluation outputs are kept with the model:
+
+```text
+runs/dd2_qrdqn_10m_v1/run_meta.json
+runs/dd2_qrdqn_10m_v1/eval/evaluations.npz
+runs/dd2_qrdqn_10m_v1/holdout_eval.json
+runs/eval/compare_ppo_qrdqn_dashboard.json
+runs/eval/qrdqn_ready_dashboard.json
+```

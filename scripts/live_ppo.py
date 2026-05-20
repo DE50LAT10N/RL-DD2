@@ -31,7 +31,7 @@ from dd2_env import DD2Env
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Run trained PPO agent in live DD2.")
+    p = argparse.ArgumentParser(description="Run a trained RL agent in live DD2.")
     p.add_argument("--model", default="runs/best/best_model.zip")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8765)
@@ -40,7 +40,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--action-timeout", type=float, default=10.0)
     p.add_argument("--stochastic", action="store_true")
     p.add_argument("--step-delay", type=float, default=0.25, help="Delay between live actions to avoid flooding game state.")
-    p.add_argument("--mode", choices=("pass_only", "hook_only", "ppo"), default="ppo", help="Force action source for commit-path diagnostics.")
+    p.add_argument("--mode", choices=("pass_only", "hook_only", "ppo", "qrdqn"), default="ppo", help="Force action source for commit-path diagnostics.")
     p.add_argument("--max-no-ack-retries", type=int, default=3, help="Max empty recv cycles before step returns no_ack.")
     p.add_argument("--enemy-turn-wait", type=float, default=60.0, help="Seconds to wait for the next hero turn before sending an action.")
     p.add_argument("--wait-poll", type=float, default=0.5, help="Polling interval while waiting for enemy/animation phases to finish.")
@@ -51,7 +51,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--terminal-wait", type=float, default=10.0, help="Seconds to wait for battle_end before safe-stop exits.")
     p.add_argument("--terminal-settle", type=float, default=3.0, help="Seconds to keep the live connection open after battle end.")
     p.add_argument("--act-on-enemy-turn", action="store_true", help="Diagnostic override: send actions even when active_side is not heroes.")
-    p.add_argument("--log-legal-actions", action="store_true", help="Print live legal actions and encoded mask indices before each PPO choice.")
+    p.add_argument("--log-legal-actions", action="store_true", help="Print live legal actions and encoded mask indices before each model choice.")
     p.add_argument(
         "--max-stuck-live-actions",
         type=int,
@@ -236,7 +236,7 @@ def _build_model_mask(
     live_obs: dict[str, Any],
 ) -> tuple[np.ndarray, dict[int, dict[str, Any]]]:
     if model_action_dim != ACTION_SPACE_SIZE:
-        raise ValueError(f"Live PPO requires current action space: model_dim={model_action_dim} env_dim={ACTION_SPACE_SIZE}")
+        raise ValueError(f"Live model requires current action space: model_dim={model_action_dim} env_dim={ACTION_SPACE_SIZE}")
     mask = np.zeros((model_action_dim,), dtype=bool)
     payload_by_idx: dict[int, dict[str, Any]] = {}
     for spec in legal:
@@ -450,7 +450,7 @@ def _decode_to_payload(
     if payload_by_idx and int(action_idx) in payload_by_idx:
         return dict(payload_by_idx[int(action_idx)])
     if model_action_dim != ACTION_SPACE_SIZE:
-        raise ValueError(f"Live PPO requires current action space: model_dim={model_action_dim} env_dim={ACTION_SPACE_SIZE}")
+        raise ValueError(f"Live model requires current action space: model_dim={model_action_dim} env_dim={ACTION_SPACE_SIZE}")
     spec = env._decode_action(int(action_idx))
     if spec.kind == "pass":
         return {"pass_turn": True}
@@ -479,7 +479,7 @@ def _adapt_obs_for_model(obs_vec: np.ndarray, expected_dim: int) -> np.ndarray:
     current_dim = int(obs_vec.shape[0])
     if current_dim == expected_dim:
         return obs_vec
-    raise ValueError(f"Live PPO requires current observation space: model_dim={expected_dim} env_dim={current_dim}")
+    raise ValueError(f"Live model requires current observation space: model_dim={expected_dim} env_dim={current_dim}")
 
 
 def _set_shadow_action_history(env: DarkestDungeonEnv, consecutive_moves: int, last_skill_name: str) -> None:
@@ -496,27 +496,31 @@ def main() -> int:
     agent = None
     model_obs_dim = 0
     model_action_dim = 0
-    if args.mode == "ppo":
-        from agents.ppo_agent import PPOAgent
+    model_modes = {"ppo", "qrdqn"}
+    if args.mode in model_modes:
+        if args.mode == "ppo":
+            from agents.ppo_agent import PPOAgent as AgentClass
+        else:
+            from agents.qrdqn_agent import QRDQNAgent as AgentClass
 
         model_path = Path(args.model)
         if not model_path.is_absolute():
             model_path = PROJECT_ROOT / model_path
         if not model_path.exists():
             raise FileNotFoundError(f"Model not found: {model_path}")
-        # Shadow env is needed for PPO observation/action encoding.
+        # Shadow env is needed for model observation/action encoding.
         shadow_env = DarkestDungeonEnv(seed=7)
-        agent = PPOAgent.load(model_path)
+        agent = AgentClass.load(model_path)
         model_obs_dim = int(agent.model.observation_space.shape[0])
         model_action_dim = int(agent.model.action_space.n)
         if model_obs_dim != int(shadow_env.observation_space.shape[0]):
             raise ValueError(
-                "Live PPO requires a model trained with the current observation space. "
+                f"Live {args.mode} requires a model trained with the current observation space. "
                 f"model_dim={model_obs_dim} env_dim={shadow_env.observation_space.shape[0]}"
             )
         if model_action_dim != int(shadow_env.action_space.n):
             raise ValueError(
-                "Live PPO requires a model trained with the current action space. "
+                f"Live {args.mode} requires a model trained with the current action space. "
                 f"model_dim={model_action_dim} env_dim={shadow_env.action_space.n}"
             )
 
@@ -591,7 +595,7 @@ def main() -> int:
                 payload = {"hero_slot": hero_slot, "skill_idx": 0, "target_idx": 0}
             else:
                 if agent is None or shadow_env is None:
-                    raise RuntimeError("PPO agent is not loaded")
+                    raise RuntimeError(f"{args.mode} agent is not loaded")
                 live_state = parse_state(_live_state_from_obs(obs))
                 shadow_env.state = live_state
                 _set_shadow_action_history(shadow_env, live_consecutive_moves, live_last_skill_name)
@@ -730,7 +734,7 @@ def main() -> int:
             reason = info.get("reason")
             if track_live_stuck_after_step(obs, info):
                 return 4
-            if args.mode == "ppo" and shadow_env is not None and action_idx >= 0:
+            if args.mode in model_modes and shadow_env is not None and action_idx >= 0:
                 chosen_spec = shadow_env._decode_action(int(action_idx))
                 if chosen_spec.kind == "move":
                     live_consecutive_moves += 1

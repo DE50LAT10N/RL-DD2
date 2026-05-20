@@ -1,0 +1,91 @@
+{
+  "ready": false,
+  "agent": "qrdqn",
+  "compare_json": "d:\\RL DD\\runs\\eval\\compare_ppo_qrdqn_dashboard.json",
+  "failures": [
+    "wasted_heal_rate>0.08"
+  ],
+  "target": {
+    "summary": {
+      "episodes": 600.0,
+      "win_rate": 0.9816666666666667,
+      "mean_reward": 95.7419190143702,
+      "mean_steps": 53.57833333333333,
+      "survival_rate": 0.8958333333333334,
+      "reward_stats": {
+        "mean": 95.74191901437021,
+        "std": 27.589330538746715,
+        "min": -5.248121237000561,
+        "p25": 76.66072974101922,
+        "median": 98.57359064327484,
+        "p75": 113.65735964912278,
+        "max": 161.69842857142854
+      },
+      "steps_stats": {
+        "mean": 53.57833333333333,
+        "std": 14.701151787832437,
+        "min": 11.0,
+        "p25": 43.0,
+        "median": 55.0,
+        "p75": 65.0,
+        "max": 91.0
+      },
+      "survival_stats": {
+        "mean": 0.8958333333333334,
+        "std": 0.22122606587430474,
+        "min": 0.0,
+        "p25": 1.0,
+        "median": 1.0,
+        "p75": 1.0,
+        "max": 1.0
+      },
+      "composite_score": 117.08091664455591
+    },
+    "tactical_metrics": {
+      "critical_heal_missed": 26.0,
+      "critical_heal_opportunities": 992.0,
+      "critical_heal_success": 966.0,
+      "decisions": 32147.0,
+      "kill_confirm_opportunities": 3777.0,
+      "kill_confirm_success": 1447.0,
+      "move_actions": 12.0,
+      "wasted_heal": 3526.0,
+      "bad_pass_rate": 0.0,
+      "wasted_heal_rate": 0.10968364077518898,
+      "critical_heal_success_rate": 0.9737903225806451,
+      "critical_heal_miss_rate": 0.02620967741935484,
+      "kill_confirm_rate": 0.3831082870002648
+    }
+  },
+  "comparisons": {
+    "random": {
+      "win_margin": 0.17666666666666664,
+      "composite_margin": 89.86915626285273,
+      "reference_agent": "random"
+    },
+    "scripted": {
+      "win_ratio": 1.0670289855072463,
+      "reference_win_rate": 0.92,
+      "reference_agent": "scripted"
+    },
+    "ppo": {
+      "win_ratio": 1.0333333333333334,
+      "composite_ratio": 0.9994849657134561,
+      "reference_agent": "ppo"
+    }
+  },
+  "thresholds": {
+    "min_win_rate": 0.35,
+    "min_composite_score": 0.0,
+    "min_survival_rate": 0.6,
+    "max_bad_pass_rate": 0.08,
+    "max_wasted_heal_rate": 0.08,
+    "max_critical_heal_miss_rate": 0.35,
+    "min_kill_confirm_rate": 0.25,
+    "min_random_win_margin": 0.1,
+    "min_random_composite_margin": 5.0,
+    "min_scripted_win_ratio": 0.5,
+    "min_ppo_win_ratio": 0.7,
+    "min_ppo_composite_ratio": 0.7
+  }
+}
