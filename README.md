@@ -58,7 +58,7 @@ The live plugin requires BepInEx to be installed in the Darkest Dungeon II game 
    Example:
 
    ```text
-   D:\SteamLibrary\steamapps\common\Darkest Dungeon II\
+   <DD2_GAME_ROOT>\
      BepInEx\
      doorstop_config.ini
      winhttp.dll
@@ -82,10 +82,50 @@ Build and install the DD2 plugin into your game folder:
 ```powershell
 powershell -ExecutionPolicy Bypass -File ".\mod\install.ps1" `
   -Build `
-  -GameRoot "D:\SteamLibrary\steamapps\common\Darkest Dungeon II"
+  -GameRoot "<DD2_GAME_ROOT>"
 ```
 
 Restart the game after installing or updating the plugin.
+
+## How The Live Mod Works
+
+The live integration is split into two processes: a C# BepInEx plugin running inside Darkest Dungeon II and a Python runner running from this repository. The game process remains the authority for combat state and action legality; the Python process only chooses among actions the game reports as legal.
+
+At startup, `DdRL.Plugin.dll` is loaded by BepInEx from:
+
+```text
+<GameRoot>\BepInEx\plugins\DdRL\
+```
+
+The plugin initializes runtime config from:
+
+```text
+<GameRoot>\BepInEx\config\com.rl.ddrl.cfg
+```
+
+By default it opens a local NDJSON/TCP server on `127.0.0.1:8765`. Messages are newline-delimited JSON objects. The protocol uses `hello`, `state`, `action`, `ack`, `battle_end`, `ping`, `pong`, and `error` messages.
+
+The live loop works like this:
+
+1. The plugin reflects the current battle state from DD2 internals: heroes, enemies, HP, stress, ranks, tokens, active unit, round, terminal state, and the game-reported `legal_actions`.
+2. The Python runner connects to the plugin, receives `state` snapshots, and converts them into the same compact observation schema used by the simulator.
+3. A shadow `DarkestDungeonEnv` is populated with the live state so the model can reuse the exact training-time observation and action encoders.
+4. The runner builds an action mask from the plugin's `legal_actions`. PPO and QR-DQN are therefore constrained by the live game, not by guessed legality.
+5. The selected model action is converted back into a JSON action payload such as skill use, item use, movement, or pass.
+6. The plugin queues the action and dispatches it inside the game through reflected combat/UI paths.
+7. The plugin replies with `ack`, then publishes the next `state` or `battle_end` message. The runner waits for the next stable hero action frame before acting again.
+
+This design keeps tactical policy in the trained model while keeping safety and validity anchored to DD2's own exposed legal actions. The live runner also has guardrails for non-hero turns, empty masks, stale states, stuck remnant turns, action timeouts, and repeated no-progress actions.
+
+Useful runtime logs:
+
+```text
+<GameRoot>\BepInEx\LogOutput.log
+runs\live_action_log.jsonl
+runs\live_qrdqn_action_log.jsonl
+```
+
+`BepInEx\LogOutput.log` shows plugin startup, protocol version, state publishing, action dispatch, and reflection/commit diagnostics. The JSONL action logs are produced by `scripts\run_live_game.ps1` when `-ActionLog` is provided and can be replayed with `scripts\evaluate_live_log.py`.
 
 ## Training
 

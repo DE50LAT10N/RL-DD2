@@ -101,6 +101,7 @@ class DarkestDungeonEnv(gym.Env[np.ndarray, int]):
             reward -= 6.0 + 6.0 * enemy_hp_ratio
         return self._obs(self.state), float(reward), terminated, truncated, {
             "heroes_won": self.state.heroes_won,
+            "is_success": bool(self.state.heroes_won),
             "TimeLimit.truncated": truncated,
         }
 

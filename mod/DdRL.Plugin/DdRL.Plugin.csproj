@@ -15,8 +15,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <BepInExPath Condition="'$(BepInExPath)' == ''">D:\SteamLibrary\steamapps\common\Darkest Dungeon® II\BepInEx</BepInExPath>
-    <GameRoot Condition="'$(GameRoot)' == ''">D:\SteamLibrary\steamapps\common\Darkest Dungeon® II</GameRoot>
+    <GameRoot Condition="'$(GameRoot)' == '' and '$(DD2_GAME_ROOT)' != ''">$(DD2_GAME_ROOT)</GameRoot>
+    <BepInExPath Condition="'$(BepInExPath)' == '' and '$(GameRoot)' != ''">$(GameRoot)\BepInEx</BepInExPath>
   </PropertyGroup>
 
   <ItemGroup>

@@ -8,6 +8,9 @@ __pycache__/
 # Local virtualenvs and tool homes
 .venv/
 venv/
+.env
+.env.*
+!.env.example
 .pydeps/
 .dotnet/
 .dotnet_home/
@@ -72,3 +75,5 @@ mod/members*.json
 *.user
 *.suo
 Thumbs.db
+*.log
+*.jsonl

@@ -14,11 +14,11 @@
 6. State extraction now reads from `Battle -> m_BattleTeams -> Team.Actors` and `ActorInstance` fields/properties (`DisplayedHp`, `DisplayedHpMax`, `TeamPosition`, `IsLiving`, `TokenContainer`).
 7. `ResolveInstance` now falls back to `UnityEngine.Object.FindObjectOfType` for Unity objects when no singleton `Instance` exists.
 8. Build/install:
-   - `dotnet build "D:\RL DD\mod\DdRL.sln" -c Release`
-   - `& "D:\RL DD\mod\install.ps1" -GameRoot "D:\SteamLibrary\steamapps\common\Darkest Dungeon® II" -Build`
+   - `dotnet build ".\mod\DdRL.sln" -c Release`
+   - `powershell -ExecutionPolicy Bypass -File ".\mod\install.ps1" -GameRoot "<DD2_GAME_ROOT>" -Build`
 9. Live verification targets in `BepInEx/LogOutput.log`:
    - `Patched turn method: ...`
    - `Patched battle-end method: ...`
    - no `Hook install skipped`.
 10. Runtime check:
-    - `powershell -ExecutionPolicy Bypass -File "D:\RL DD\scripts\run_live_game.ps1" -Model "D:\RL DD\runs\best\best_model.zip" -MaxSteps 200`
+    - `powershell -ExecutionPolicy Bypass -File ".\scripts\run_live_game.ps1" -Model ".\runs\best\best_model.zip" -MaxSteps 200`

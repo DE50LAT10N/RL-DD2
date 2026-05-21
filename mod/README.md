@@ -49,7 +49,7 @@ Output:
 ## Install
 
 ```powershell
-.\mod_dd2\install.ps1 -GameRoot "C:\Program Files (x86)\Steam\steamapps\common\Darkest Dungeon II" -Build
+.\mod_dd2\install.ps1 -GameRoot "<DD2_GAME_ROOT>" -Build
 ```
 
 Expected destination:
